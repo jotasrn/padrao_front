@@ -1,5 +1,13 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import './assets/global.css';
+
 body {
   margin: 0;
   padding: 0;
-  background-color: #111827;
+  background-color: #0b0f19; /* Sleek rich dark slate */
+  color: #f3f4f6;
+  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
 }

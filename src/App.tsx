@@ -1,10 +1,10 @@
 import { AppProvider } from './app/AppProvider';
-import { DashboardDocs } from './screens/DashboardDocs';
+import { VestDashboard } from './screens/VestDashboard';
 
 export default function App() {
   return (
     <AppProvider>
-      <DashboardDocs />
+      <VestDashboard />
     </AppProvider>
   );
 }

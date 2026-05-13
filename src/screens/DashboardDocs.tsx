@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { useAuthStore } from '../store/useAuthStore';
-import { OperadoraList } from './OperadoraList';
 
 export const DashboardDocs: React.FC = () => {
   const { usuario } = useAuthStore();
@@ -262,10 +261,6 @@ docker compose up -d --build`}
                 <p style={{ color: '#9ca3af', margin: 0 }}>
                   Esta seção é a simulação viva do fluxo da arquitetura SEMOB. Ao clicar em filtrar, a tela aciona o Hook customizado (<code style={{ color: '#34d399' }}>/hooks/useOperadoras.ts</code>), que chama o Service (<code style={{ color: '#34d399' }}>/services/OperadoraService.ts</code>) isolando o Axios.
                 </p>
-              </div>
-
-              <div style={{ border: '2px dashed #334155', borderRadius: '1rem', padding: '0.5rem' }}>
-                <OperadoraList />
               </div>
 
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
