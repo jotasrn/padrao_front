@@ -11,8 +11,8 @@
     "check-java": "node ./scripts/check-java.js",
     "pwa:build": "vite build && npx workbox-cli generateSW workbox-config.js",
     "cap:sync": "npm run build && npx cap sync",
-    "android:debug": "npm run check-java && npm run cap:sync && cd android && ./gradlew assembleDebug",
-    "android:release": "npm run check-java && npm run cap:sync && cd android && ./gradlew assembleRelease"
+    "android:debug": "npm run check-java && npm run cap:sync && cd android && gradlew assembleDebug",
+    "android:release": "npm run check-java && npm run cap:sync && cd android && gradlew assembleRelease"
   },
   "dependencies": {
     "@capacitor/android": "^6.0.0",

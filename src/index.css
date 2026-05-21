@@ -1,8 +1,8 @@
+@import './assets/global.css';
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
-
-@import './assets/global.css';
 
 body {
   margin: 0;
