@@ -1,35 +1,28 @@
 import React, { useState, useEffect } from 'react';
-import { Target, X } from 'lucide-react';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { Target, X, Check } from 'lucide-react-native';
 import { Goal, Caixinha } from '../types';
 
 interface GoalFormProps {
   caixinhas: Caixinha[];
   editingGoal: Goal | null;
   onSubmit: (data: {
-    nome: string;
-    valorObjetivo: number;
-    dataAlvo: string;
-    caixinhaVinculadaIds: string[];
-    aporteSalarioDireto: number;
-    descricao?: string;
+    nome: string; valorObjetivo: number; dataAlvo: string;
+    caixinhaVinculadaIds: string[]; aporteSalarioDireto: number; descricao?: string;
   }) => void;
   onCancel: () => void;
   formatBRL: (val: number) => string;
 }
 
 export const GoalForm: React.FC<GoalFormProps> = ({
-  caixinhas,
-  editingGoal,
-  onSubmit,
-  onCancel,
-  formatBRL,
+  caixinhas, editingGoal, onSubmit, onCancel, formatBRL,
 }) => {
-  const [gNome, setGNome] = useState('');
-  const [gValor, setGValor] = useState('');
-  const [gData, setGData] = useState('2026-12');
-  const [gCaixinhaIds, setGCaixinhaIds] = useState<string[]>([]);
+  const [gNome,               setGNome]               = useState('');
+  const [gValor,              setGValor]              = useState('');
+  const [gData,               setGData]               = useState('2026-12');
+  const [gCaixinhaIds,        setGCaixinhaIds]        = useState<string[]>([]);
   const [gAporteSalarioDireto, setGAporteSalarioDireto] = useState('');
-  const [gDesc, setGDesc] = useState('');
+  const [gDesc,               setGDesc]               = useState('');
 
   useEffect(() => {
     if (editingGoal) {
@@ -40,155 +33,191 @@ export const GoalForm: React.FC<GoalFormProps> = ({
       setGAporteSalarioDireto(editingGoal.aporteSalarioDireto?.toString() || '');
       setGDesc(editingGoal.descricao || '');
     } else {
-      setGNome('');
-      setGValor('');
-      setGData('2026-12');
-      setGCaixinhaIds([]);
-      setGAporteSalarioDireto('');
-      setGDesc('');
+      setGNome(''); setGValor(''); setGData('2026-12');
+      setGCaixinhaIds([]); setGAporteSalarioDireto(''); setGDesc('');
     }
   }, [editingGoal]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!gNome || !gValor || !gData) return;
-
     onSubmit({
-      nome: gNome,
-      valorObjetivo: parseFloat(gValor) || 0,
-      dataAlvo: gData,
-      caixinhaVinculadaIds: gCaixinhaIds,
+      nome: gNome, valorObjetivo: parseFloat(gValor) || 0,
+      dataAlvo: gData, caixinhaVinculadaIds: gCaixinhaIds,
       aporteSalarioDireto: parseFloat(gAporteSalarioDireto) || 0,
       descricao: gDesc,
     });
   };
 
+  const toggleCaixinha = (id: string) =>
+    setGCaixinhaIds(prev => prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]);
+
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl max-w-2xl flex flex-col gap-4 animate-fadeIn">
-      <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-          <Target className="h-4 w-4 text-indigo-400" /> {editingGoal ? 'Editar Objetivo' : 'Adicionar Novo Objetivo'}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-slate-400 hover:text-white"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <View style={formCard}>
+      {/* Header */}
+      <View style={formHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{
+            width: 30, height: 30, borderRadius: 9,
+            backgroundColor: 'rgba(251,146,60,0.1)',
+            borderWidth: 1, borderColor: 'rgba(251,146,60,0.2)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Target size={14} color="#fb923c" />
+          </View>
+          <Text style={formTitle}>{editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}</Text>
+        </View>
+        <TouchableOpacity onPress={onCancel} style={closeBtn}>
+          <X size={15} color="#64748b" />
+        </TouchableOpacity>
+      </View>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Nome do Objetivo</label>
-          <input
-            type="text"
-            value={gNome}
-            onChange={(e) => setGNome(e.target.value)}
-            required
-            placeholder="Ex: Comprar Notebook, Viagem Internacional..."
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+      <View style={{ gap: 14 }}>
+        <View>
+          <Text style={fieldLabel}>Nome do Objetivo</Text>
+          <TextInput
+            value={gNome} onChangeText={setGNome}
+            placeholder="Ex: Comprar Notebook..." placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Valor do Objetivo (Meta R$)</label>
-          <input
-            type="number"
-            value={gValor}
-            onChange={(e) => setGValor(e.target.value)}
-            required
-            placeholder="0.00"
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{ flex: 1 }}>
+            <Text style={fieldLabel}>Valor da Meta (R$)</Text>
+            <TextInput
+              value={gValor} onChangeText={setGValor}
+              keyboardType="numeric" placeholder="0,00" placeholderTextColor="#334155"
+              style={input}
+            />
+          </View>
+          <View style={{ flex: 1 }}>
+            <Text style={fieldLabel}>Mês Alvo</Text>
+            <TextInput
+              value={gData} onChangeText={setGData}
+              placeholder="YYYY-MM" placeholderTextColor="#334155"
+              style={input}
+            />
+          </View>
+        </View>
+
+        <View>
+          <Text style={fieldLabel}>Aporte Direto do Salário (R$)</Text>
+          <TextInput
+            value={gAporteSalarioDireto} onChangeText={setGAporteSalarioDireto}
+            keyboardType="numeric" placeholder="0,00 (além das caixinhas)" placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Mês Alvo (Prazo de Conclusão)</label>
-          <input
-            type="month"
-            value={gData}
-            onChange={(e) => setGData(e.target.value)}
-            required
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5 flex items-center gap-1">
-            Aporte Direto do Salário (R$/mês)
-            <span className="text-[9px] text-slate-500 font-normal">(além das caixinhas)</span>
-          </label>
-          <input
-            type="number"
-            value={gAporteSalarioDireto}
-            onChange={(e) => setGAporteSalarioDireto(e.target.value)}
-            placeholder="0.00"
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-          />
-        </div>
-
-        <div className="flex flex-col sm:col-span-2">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Vincular Investimentos (Caixinhas)</label>
+        {/* Caixinhas selector */}
+        <View>
+          <Text style={fieldLabel}>Vincular Caixinhas</Text>
           {caixinhas.length === 0 ? (
-            <p className="text-[11px] text-amber-400">Você não possui nenhuma caixinha criada ainda. Crie uma caixinha na aba "Caixinhas" para poder vinculá-la!</p>
+            <View style={{
+              backgroundColor: 'rgba(245,158,11,0.06)',
+              borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)',
+              borderRadius: 12, padding: 12,
+            }}>
+              <Text style={{ color: '#f59e0b', fontSize: 11, fontWeight: '600', lineHeight: 16 }}>
+                ⚠ Nenhuma caixinha criada ainda. Crie uma na aba "Caixinhas" para vincular.
+              </Text>
+            </View>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 bg-slate-950/40 p-4 rounded-xl border border-slate-800/80">
+            <View style={{ gap: 8 }}>
               {caixinhas.map(cx => {
                 const isSelected = gCaixinhaIds.includes(cx.id);
                 return (
-                  <button
-                    type="button"
+                  <TouchableOpacity
                     key={cx.id}
-                    onClick={() => {
-                      if (isSelected) {
-                        setGCaixinhaIds(gCaixinhaIds.filter(id => id !== cx.id));
-                      } else {
-                        setGCaixinhaIds([...gCaixinhaIds, cx.id]);
-                      }
+                    onPress={() => toggleCaixinha(cx.id)}
+                    style={{
+                      flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
+                      paddingHorizontal: 14, paddingVertical: 12, borderRadius: 12,
+                      backgroundColor: isSelected ? 'rgba(99,102,241,0.12)' : 'rgba(255,255,255,0.03)',
+                      borderWidth: 1, borderColor: isSelected ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.07)',
                     }}
-                    className={`flex items-center justify-between px-3 py-2 rounded-lg text-xs font-bold transition border ${
-                      isSelected 
-                        ? 'bg-indigo-600/15 border-indigo-500/50 text-white' 
-                        : 'bg-slate-900/60 border-slate-800/80 text-slate-400 hover:text-slate-200 hover:border-slate-700'
-                    }`}
                   >
-                    <span className="truncate pr-1">{cx.nome}</span>
-                    <span className="text-[10px] text-indigo-400 font-black whitespace-nowrap shrink-0">{formatBRL(cx.valorAtual)}</span>
-                  </button>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+                      <View style={{
+                        width: 20, height: 20, borderRadius: 6,
+                        backgroundColor: isSelected ? '#6366f1' : 'rgba(255,255,255,0.05)',
+                        borderWidth: 1, borderColor: isSelected ? '#6366f1' : 'rgba(255,255,255,0.15)',
+                        alignItems: 'center', justifyContent: 'center',
+                      }}>
+                        {isSelected && <Check size={11} color="white" />}
+                      </View>
+                      <Text style={{ color: isSelected ? 'white' : '#64748b', fontWeight: '700', fontSize: 13 }}>
+                        {cx.nome}
+                      </Text>
+                    </View>
+                    <Text style={{ color: isSelected ? '#818cf8' : '#475569', fontSize: 11, fontWeight: '800' }}>
+                      {formatBRL(cx.valorAtual)}
+                    </Text>
+                  </TouchableOpacity>
                 );
               })}
-            </div>
+            </View>
           )}
-        </div>
+        </View>
 
-        <div className="flex flex-col sm:col-span-2">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Descrição Opcional</label>
-          <input
-            type="text"
-            value={gDesc}
-            onChange={(e) => setGDesc(e.target.value)}
-            placeholder="Uma nota curta para se motivar..."
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        <View>
+          <Text style={fieldLabel}>Descrição (opcional)</Text>
+          <TextInput
+            value={gDesc} onChangeText={setGDesc}
+            placeholder="Uma nota para se motivar..." placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
-      </div>
+        </View>
+      </View>
 
-      <div className="flex justify-end gap-3 border-t border-slate-800 pt-3 mt-1.5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 rounded-xl hover:bg-slate-750 transition"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition"
-        >
-          {editingGoal ? 'Salvar Alterações' : 'Salvar Objetivo'}
-        </button>
-      </div>
-    </form>
+      {/* Footer */}
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+        <TouchableOpacity onPress={onCancel} style={btnSecondary}>
+          <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimary}>
+          <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
+            {editingGoal ? 'Salvar Alterações' : 'Salvar Objetivo'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
+};
+
+const formCard: any = {
+  backgroundColor: '#131b2e',
+  borderWidth: 1, borderColor: 'rgba(251,146,60,0.15)',
+  borderRadius: 22, padding: 20, gap: 16,
+  shadowColor: '#fb923c', shadowOpacity: 0.1, shadowRadius: 20,
+};
+const formHeader: any = {
+  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', paddingBottom: 14,
+};
+const formTitle: any = { color: 'white', fontWeight: '800', fontSize: 15 };
+const closeBtn: any = {
+  width: 30, height: 30, borderRadius: 8,
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  alignItems: 'center', justifyContent: 'center',
+};
+const fieldLabel: any = {
+  color: '#64748b', fontSize: 10, fontWeight: '700',
+  letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8,
+};
+const input: any = {
+  backgroundColor: 'rgba(255,255,255,0.04)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
+  color: 'white', fontSize: 14, fontWeight: '500',
+};
+const btnSecondary: any = {
+  flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+};
+const btnPrimary: any = {
+  flex: 2, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+  backgroundColor: '#fb923c',
+  shadowColor: '#fb923c', shadowOpacity: 0.5, shadowRadius: 10,
 };

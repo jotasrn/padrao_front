@@ -1,9 +1,10 @@
-import React from 'react';
-import { Pencil, Trash2, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
+import { Pencil, Trash2, AlertTriangle, CheckCircle2, Target, Zap } from 'lucide-react-native';
 import { Goal } from '../types';
 
 interface GoalCardProps {
-  goal: any; // predicted compiled goal item
+  goal: any;
   goals: Goal[];
   onEdit: (g: Goal) => void;
   onDelete: (id: string) => void;
@@ -13,118 +14,190 @@ interface GoalCardProps {
 }
 
 export const GoalCard: React.FC<GoalCardProps> = ({
-  goal,
-  goals,
-  onEdit,
-  onDelete,
-  onOptimize,
-  formatBRL,
-  formatarData,
+  goal, goals, onEdit, onDelete, onOptimize, formatBRL, formatarData,
 }) => {
   const percentComplete = Math.min(100, Math.round((goal.currentSavedForGoal / goal.valorObjetivo) * 100 || 0));
+  const isOnTrack = goal.achievable;
+
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
+  const barWidth  = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start();
+    // bar animation uses non-native driver (layout)
+    Animated.timing(barWidth, { toValue: percentComplete, duration: 700, delay: 300, useNativeDriver: false }).start();
+  }, []);
+
+  const barColor    = percentComplete === 100 ? '#10b981' : isOnTrack ? '#818cf8' : '#f59e0b';
+  const statusColor = isOnTrack ? '#10b981' : '#f59e0b';
+  const statusBg    = isOnTrack ? 'rgba(16,185,129,0.1)' : 'rgba(245,158,11,0.1)';
+  const statusBorder = isOnTrack ? 'rgba(16,185,129,0.25)' : 'rgba(245,158,11,0.25)';
 
   return (
-    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 shadow-xl">
-      <div className="flex justify-between items-start gap-3">
-        <div className="min-w-0">
-          <div className="flex items-center gap-2 flex-wrap">
-            <h3 className="font-extrabold text-white text-base truncate m-0">{goal.nome}</h3>
-            <span className={`text-[9px] font-black uppercase px-2 py-0.5 rounded-full ${
-              goal.achievable 
-                ? 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' 
-                : 'bg-amber-500/10 text-amber-400 border border-amber-500/20'
-            }`}>
-              {goal.achievable ? 'No Prazo' : 'Requer Ajuste'}
-            </span>
-          </div>
-          {goal.descricao && <p className="text-xs text-slate-400 leading-normal mt-1 m-0">{goal.descricao}</p>}
-          <span className="text-[10px] font-bold text-indigo-400 block mt-2">Caixinha vinculada: {goal.linkedCaixinhaName}</span>
-        </div>
-        <div className="flex gap-1 items-center shrink-0">
-          <button
-            onClick={() => {
-              const originalGoal = goals.find(g => g.id === goal.id);
-              if (originalGoal) onEdit(originalGoal);
-            }}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
-            title="Editar objetivo"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button
-            onClick={() => onDelete(goal.id)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
-            title="Excluir meta"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+      <View style={{
+        backgroundColor: '#0f1629',
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+        borderRadius: 22, padding: 20, gap: 16,
+      }}>
+        {/* Header */}
+        <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+          <View style={{
+            width: 44, height: 44, borderRadius: 13,
+            backgroundColor: 'rgba(251,146,60,0.1)',
+            borderWidth: 1, borderColor: 'rgba(251,146,60,0.25)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <Target size={20} color="#fb923c" />
+          </View>
 
-      {/* Progresso */}
-      <div>
-        <div className="flex justify-between text-xs font-bold text-slate-300 mb-1">
-          <span>Progresso ({percentComplete}%)</span>
-          <span>{formatBRL(goal.currentSavedForGoal)} / {formatBRL(goal.valorObjetivo)}</span>
-        </div>
-        <div className="h-2.5 w-full bg-slate-950 rounded-full overflow-hidden">
-          <div
-            className={`h-full rounded-full transition-all duration-500 ${
-              percentComplete === 100 
-                ? 'bg-gradient-to-r from-emerald-500 to-cyan-400' 
-                : 'bg-indigo-500'
-            }`}
-            style={{ width: `${percentComplete}%` }}
-          />
-        </div>
-      </div>
+          <View style={{ flex: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }} numberOfLines={1}>
+                {goal.nome}
+              </Text>
+              <View style={{
+                paddingHorizontal: 8, paddingVertical: 3, borderRadius: 8,
+                backgroundColor: statusBg, borderWidth: 1, borderColor: statusBorder,
+              }}>
+                <Text style={{ color: statusColor, fontSize: 9, fontWeight: '800', letterSpacing: 0.5 }}>
+                  {isOnTrack ? '✓ NO PRAZO' : '⚠ AJUSTE'}
+                </Text>
+              </View>
+            </View>
+            {goal.descricao ? (
+              <Text style={{ color: '#64748b', fontSize: 12, lineHeight: 16, marginTop: 4 }}>{goal.descricao}</Text>
+            ) : null}
+            <Text style={{ color: '#6366f1', fontSize: 10, fontWeight: '700', marginTop: 4 }}>
+              📦 {goal.linkedCaixinhaName}
+            </Text>
+          </View>
 
-      {/* Analítica */}
-      <div className="p-4 bg-slate-950/40 rounded-xl border border-slate-800/80 flex flex-col gap-2.5">
-        <div className="flex justify-between items-center text-xs gap-2">
-          <span className="text-slate-400">Data Alvo Limite:</span>
-          <strong className="text-slate-200">{formatarData(`${goal.dataAlvo}-01`)}</strong>
-        </div>
+          <View style={{ flexDirection: 'row', gap: 6 }}>
+            <TouchableOpacity
+              onPress={() => { const g = goals.find(g => g.id === goal.id); if (g) onEdit(g); }}
+              style={{
+                width: 32, height: 32, borderRadius: 9,
+                backgroundColor: 'rgba(99,102,241,0.1)',
+                borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Pencil size={14} color="#818cf8" />
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => onDelete(goal.id)}
+              style={{
+                width: 32, height: 32, borderRadius: 9,
+                backgroundColor: 'rgba(244,63,94,0.1)',
+                borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)',
+                alignItems: 'center', justifyContent: 'center',
+              }}
+            >
+              <Trash2 size={14} color="#f43f5e" />
+            </TouchableOpacity>
+          </View>
+        </View>
 
-        <div className="flex justify-between items-center text-xs gap-2 border-t border-slate-800/40 pt-2">
-          <span className="text-slate-400">Previsão Real de Conclusão:</span>
-          <strong className={`font-extrabold ${goal.achievable ? 'text-emerald-400' : 'text-amber-400'}`}>
-            {goal.reachedDateStr === 'N/A' ? 'Sem aportes ativos' : `${goal.reachedDateStr} (${goal.monthsNeeded} meses)`}
-          </strong>
-        </div>
+        {/* Progress bar */}
+        <View style={{ gap: 8 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700' }}>
+              Progresso · {percentComplete}%
+            </Text>
+            <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700' }}>
+              {formatBRL(goal.currentSavedForGoal)} / {formatBRL(goal.valorObjetivo)}
+            </Text>
+          </View>
+          <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6 }}>
+            <Animated.View style={{
+              height: 8, borderRadius: 6,
+              backgroundColor: barColor,
+              width: barWidth.interpolate({ inputRange: [0, 100], outputRange: ['0%', '100%'] }),
+              shadowColor: barColor, shadowOpacity: 0.7, shadowRadius: 6,
+            }} />
+          </View>
+        </View>
 
-        {/* Otimizador de aporte */}
-        {!goal.achievable && (goal.caixinhaVinculadaIds?.length || goal.caixinhaVinculadaId) && (
-          <div className="bg-amber-500/10 border border-amber-500/20 text-amber-400 rounded-lg p-3 text-xs flex flex-col gap-2.5 mt-1">
-            <div className="flex gap-2 items-start">
-              <AlertTriangle className="h-4 w-4 shrink-0 mt-0.5" />
-              <div className="leading-relaxed">
-                <span className="font-extrabold block mb-0.5">Ajuste Recomendado</span>
-                Para atingir este objetivo dentro do prazo, aumente o aporte de uma de suas caixinhas vinculadas para <strong>{formatBRL(goal.requiredAporte)}</strong> mensais.
-              </div>
-            </div>
-            <button
-              onClick={() => {
+        {/* Info grid */}
+        <View style={{
+          backgroundColor: 'rgba(255,255,255,0.03)',
+          borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+          borderRadius: 14, padding: 14, gap: 10,
+        }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: '#64748b', fontSize: 11 }}>Data Alvo:</Text>
+            <Text style={{ color: '#e2e8f0', fontSize: 11, fontWeight: '700' }}>
+              {formatarData(`${goal.dataAlvo}-01`)}
+            </Text>
+          </View>
+          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
+            <Text style={{ color: '#64748b', fontSize: 11 }}>Previsão Real:</Text>
+            <Text style={{ color: statusColor, fontSize: 11, fontWeight: '800' }}>
+              {goal.reachedDateStr === 'N/A'
+                ? 'Sem aportes ativos'
+                : `${goal.reachedDateStr} (${goal.monthsNeeded}m)`}
+            </Text>
+          </View>
+        </View>
+
+        {/* Adjustment alert */}
+        {!isOnTrack && (goal.caixinhaVinculadaIds?.length || goal.caixinhaVinculadaId) ? (
+          <View style={{
+            backgroundColor: 'rgba(245,158,11,0.08)',
+            borderWidth: 1, borderColor: 'rgba(245,158,11,0.25)',
+            borderRadius: 14, padding: 14, gap: 10,
+          }}>
+            <View style={{ flexDirection: 'row', gap: 10, alignItems: 'flex-start' }}>
+              <AlertTriangle size={16} color="#f59e0b" style={{ marginTop: 1 }} />
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: '#f59e0b', fontWeight: '800', fontSize: 12 }}>Ajuste Recomendado</Text>
+                <Text style={{ color: '#fbbf24', fontSize: 11, lineHeight: 16, marginTop: 3 }}>
+                  Aumente o aporte para {formatBRL(goal.requiredAporte)}/mês para atingir no prazo.
+                </Text>
+              </View>
+            </View>
+            <TouchableOpacity
+              onPress={() => {
                 const targetId = goal.caixinhaVinculadaIds?.[0] || goal.caixinhaVinculadaId;
                 if (targetId) onOptimize(targetId, goal.requiredAporte);
               }}
-              className="self-end px-3 py-1.5 bg-amber-600 hover:bg-amber-500 text-white rounded-lg font-bold text-[10px] transition shadow-md shadow-amber-600/15"
+              style={{
+                flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 6,
+                backgroundColor: '#f59e0b', borderRadius: 10,
+                paddingVertical: 10, paddingHorizontal: 16,
+                shadowColor: '#f59e0b', shadowOpacity: 0.4, shadowRadius: 8,
+              }}
             >
-              Aplicar Aporte Sugerido
-            </button>
-          </div>
-        )}
+              <Zap size={13} color="white" />
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 11 }}>Aplicar Aporte Sugerido</Text>
+            </TouchableOpacity>
+          </View>
+        ) : null}
 
-        {goal.achievable && (goal.caixinhaVinculadaIds?.length || goal.caixinhaVinculadaId) && (
-          <div className="bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg p-3 text-xs flex items-start gap-2 mt-1">
-            <CheckCircle2 className="h-4 w-4 shrink-0 mt-0.5" />
-            <div className="leading-relaxed">
-              <span className="font-extrabold block">Tudo sob controle!</span>
-              Seu ritmo de poupança atual é suficiente para atingir o objetivo com sucesso.
-            </div>
-          </div>
-        )}
-      </div>
-    </div>
+        {/* On track */}
+        {isOnTrack && (goal.caixinhaVinculadaIds?.length || goal.caixinhaVinculadaId) ? (
+          <View style={{
+            backgroundColor: 'rgba(16,185,129,0.08)',
+            borderWidth: 1, borderColor: 'rgba(16,185,129,0.25)',
+            borderRadius: 14, padding: 14,
+            flexDirection: 'row', alignItems: 'center', gap: 10,
+          }}>
+            <CheckCircle2 size={18} color="#10b981" />
+            <View style={{ flex: 1 }}>
+              <Text style={{ color: '#10b981', fontWeight: '800', fontSize: 12 }}>Tudo sob controle!</Text>
+              <Text style={{ color: '#34d399', fontSize: 11, marginTop: 2 }}>
+                Seu ritmo de poupança atual é suficiente.
+              </Text>
+            </View>
+          </View>
+        ) : null}
+      </View>
+    </Animated.View>
   );
 };

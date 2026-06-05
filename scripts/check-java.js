@@ -1,4 +1,4 @@
-import { execSync } from 'child_process';
+const { execSync } = require('child_process');
 
 try {
   const javaVersion = execSync('java -version 2>&1').toString();

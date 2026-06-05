@@ -1,41 +1,36 @@
-import { Capacitor } from '@capacitor/core';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 /**
  * Abstração nativa para armazenamento persistente.
- * Se estiver rodando no Mobile (Capacitor), pode estender para usar SQLite ou Preferences nativos.
- * Se estiver no Web (Browser), utiliza o localStorage.
+ * Usa AsyncStorage no React Native (Expo).
  */
 export const NativeStorage = {
   isNative(): boolean {
-    return Capacitor.isNativePlatform();
+    return true; // We are always native now
   },
 
   async getItem(key: string): Promise<string | null> {
-    if (this.isNative()) {
-      // Exemplo usando Capacitor Preferences ou SQLite:
-      // const { value } = await Preferences.get({ key });
-      // return value;
-      return localStorage.getItem(key);
-    } else {
-      return localStorage.getItem(key);
+    try {
+      return await AsyncStorage.getItem(key);
+    } catch (e) {
+      console.error('Error reading value', e);
+      return null;
     }
   },
 
   async setItem(key: string, value: string): Promise<void> {
-    if (this.isNative()) {
-      // await Preferences.set({ key, value });
-      localStorage.setItem(key, value);
-    } else {
-      localStorage.setItem(key, value);
+    try {
+      await AsyncStorage.setItem(key, value);
+    } catch (e) {
+      console.error('Error saving value', e);
     }
   },
 
   async removeItem(key: string): Promise<void> {
-    if (this.isNative()) {
-      // await Preferences.remove({ key });
-      localStorage.removeItem(key);
-    } else {
-      localStorage.removeItem(key);
+    try {
+      await AsyncStorage.removeItem(key);
+    } catch (e) {
+      console.error('Error removing value', e);
     }
   }
 };

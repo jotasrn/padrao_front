@@ -1,26 +1,20 @@
 import React, { useState, useEffect } from 'react';
-import { PiggyBank, X } from 'lucide-react';
+import { View, Text, TextInput, TouchableOpacity } from 'react-native';
+import { PiggyBank, X } from 'lucide-react-native';
 import { Caixinha } from '../types';
 
 interface CaixinhaFormProps {
   editingCaixinha: Caixinha | null;
   onSubmit: (data: {
-    nome: string;
-    valorAtual: number;
-    aporteMensal: number;
-    rendimentoCdiPct: number;
+    nome: string; valorAtual: number; aporteMensal: number; rendimentoCdiPct: number;
   }) => void;
   onCancel: () => void;
 }
 
-export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({
-  editingCaixinha,
-  onSubmit,
-  onCancel,
-}) => {
-  const [cxNome, setCxNome] = useState('');
-  const [cxValor, setCxValor] = useState('');
-  const [cxAporte, setCxAporte] = useState('');
+export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({ editingCaixinha, onSubmit, onCancel }) => {
+  const [cxNome,       setCxNome]       = useState('');
+  const [cxValor,      setCxValor]      = useState('');
+  const [cxAporte,     setCxAporte]     = useState('');
   const [cxRendimento, setCxRendimento] = useState('100');
 
   useEffect(() => {
@@ -30,17 +24,12 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({
       setCxAporte(editingCaixinha.aporteMensal.toString());
       setCxRendimento(editingCaixinha.rendimentoCdiPct?.toString() || '100');
     } else {
-      setCxNome('');
-      setCxValor('');
-      setCxAporte('');
-      setCxRendimento('100');
+      setCxNome(''); setCxValor(''); setCxAporte(''); setCxRendimento('100');
     }
   }, [editingCaixinha]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!cxNome || !cxValor || !cxAporte) return;
-
     onSubmit({
       nome: cxNome,
       valorAtual: parseFloat(cxValor) || 0,
@@ -49,92 +38,126 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({
     });
   };
 
+  const CDI_PREVIEW = ((parseFloat(cxRendimento) || 100) / 100) * 10.75;
+
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl max-w-2xl flex flex-col gap-4 animate-fadeIn">
-      <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-          <PiggyBank className="h-4 w-4 text-indigo-400" /> {editingCaixinha ? 'Editar Caixinha' : 'Criar Nova Caixinha'}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-slate-400 hover:text-white"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <View style={formCard}>
+      {/* Header */}
+      <View style={formHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{
+            width: 30, height: 30, borderRadius: 9,
+            backgroundColor: 'rgba(52,211,153,0.1)',
+            borderWidth: 1, borderColor: 'rgba(52,211,153,0.2)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <PiggyBank size={14} color="#34d399" />
+          </View>
+          <Text style={formTitle}>{editingCaixinha ? 'Editar Caixinha' : 'Nova Caixinha'}</Text>
+        </View>
+        <TouchableOpacity onPress={onCancel} style={closeBtn}>
+          <X size={15} color="#64748b" />
+        </TouchableOpacity>
+      </View>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Nome do Investimento/Caixinha</label>
-          <input
-            type="text"
-            value={cxNome}
-            onChange={(e) => setCxNome(e.target.value)}
-            required
-            placeholder="Ex: Emergência, Viagem, Aposentadoria..."
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+      <View style={{ gap: 14 }}>
+        <View>
+          <Text style={fieldLabel}>Nome da Caixinha</Text>
+          <TextInput
+            value={cxNome} onChangeText={setCxNome}
+            placeholder="Ex: Emergência, Viagem..." placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Valor Já Acumulado Inicial (R$)</label>
-          <input
-            type="number"
-            value={cxValor}
-            onChange={(e) => setCxValor(e.target.value)}
-            required
-            placeholder="0.00"
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        <View>
+          <Text style={fieldLabel}>Valor Acumulado Inicial (R$)</Text>
+          <TextInput
+            value={cxValor} onChangeText={setCxValor}
+            keyboardType="numeric" placeholder="0,00" placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Aporte Mensal (Guardar todo mês) (R$)</label>
-          <input
-            type="number"
-            value={cxAporte}
-            onChange={(e) => setCxAporte(e.target.value)}
-            required
-            placeholder="Ex: 200"
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        <View>
+          <Text style={fieldLabel}>Aporte Mensal (R$)</Text>
+          <TextInput
+            value={cxAporte} onChangeText={setCxAporte}
+            keyboardType="numeric" placeholder="Ex: 200" placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Rendimento (% do CDI)</label>
-          <input
-            type="number"
-            min="10"
-            max="500"
-            step="1"
-            value={cxRendimento}
-            onChange={(e) => setCxRendimento(e.target.value)}
-            required
-            placeholder="Ex: 100 ou 110"
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        <View>
+          <Text style={fieldLabel}>Rendimento (% do CDI)</Text>
+          <TextInput
+            value={cxRendimento} onChangeText={setCxRendimento}
+            keyboardType="numeric" placeholder="100" placeholderTextColor="#334155"
+            style={input}
           />
-          <span className="text-[10px] text-slate-400 mt-1">
-            CDI atual: ~10,75% a.a. Normal = 100% CDI. Turbo = 101% a 115% CDI.
-          </span>
-        </div>
-      </div>
+          {/* CDI preview */}
+          <View style={{
+            flexDirection: 'row', alignItems: 'center', gap: 6,
+            marginTop: 8, backgroundColor: 'rgba(52,211,153,0.06)',
+            borderWidth: 1, borderColor: 'rgba(52,211,153,0.15)',
+            borderRadius: 8, paddingHorizontal: 10, paddingVertical: 6,
+          }}>
+            <View style={{ width: 5, height: 5, borderRadius: 3, backgroundColor: '#34d399' }} />
+            <Text style={{ color: '#34d399', fontSize: 10, fontWeight: '700' }}>
+              {cxRendimento}% CDI = {CDI_PREVIEW.toFixed(2)}% a.a. · CDI atual: ~10,75%
+            </Text>
+          </View>
+        </View>
+      </View>
 
-      <div className="flex justify-end gap-3 border-t border-slate-800 pt-3 mt-1.5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 rounded-xl hover:bg-slate-750 transition"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition"
-        >
-          {editingCaixinha ? 'Salvar Alterações' : 'Criar Caixinha'}
-        </button>
-      </div>
-    </form>
+      {/* Footer */}
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+        <TouchableOpacity onPress={onCancel} style={btnSecondary}>
+          <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimary}>
+          <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
+            {editingCaixinha ? 'Salvar Alterações' : 'Criar Caixinha'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
+};
+
+const formCard: any = {
+  backgroundColor: '#131b2e',
+  borderWidth: 1, borderColor: 'rgba(52,211,153,0.15)',
+  borderRadius: 22, padding: 20, gap: 16,
+  shadowColor: '#10b981', shadowOpacity: 0.1, shadowRadius: 20,
+};
+const formHeader: any = {
+  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', paddingBottom: 14,
+};
+const formTitle: any = { color: 'white', fontWeight: '800', fontSize: 15 };
+const closeBtn: any = {
+  width: 30, height: 30, borderRadius: 8,
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  alignItems: 'center', justifyContent: 'center',
+};
+const fieldLabel: any = {
+  color: '#64748b', fontSize: 10, fontWeight: '700',
+  letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8,
+};
+const input: any = {
+  backgroundColor: 'rgba(255,255,255,0.04)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
+  color: 'white', fontSize: 14, fontWeight: '500',
+};
+const btnSecondary: any = {
+  flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+};
+const btnPrimary: any = {
+  flex: 2, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+  backgroundColor: '#10b981',
+  shadowColor: '#10b981', shadowOpacity: 0.5, shadowRadius: 10,
 };

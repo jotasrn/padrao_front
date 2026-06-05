@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { DollarSign, Check, X, Sparkles } from 'lucide-react';
+import React, { useState, useRef, useEffect } from 'react';
+import { View, Text, TextInput, TouchableOpacity, Animated } from 'react-native';
+import { DollarSign, Check, X, Edit3 } from 'lucide-react-native';
 import { Salary, Aggregates } from '../types';
 
 interface SalarySectionProps {
@@ -10,133 +11,173 @@ interface SalarySectionProps {
 }
 
 export const SalarySection: React.FC<SalarySectionProps> = ({
-  salary,
-  aggregates,
-  updateSalary,
-  formatBRL,
+  salary, aggregates, updateSalary, formatBRL,
 }) => {
   const [editingSalary, setEditingSalary] = useState(false);
   const [newSalaryVal, setNewSalaryVal] = useState(salary.salario.toString());
   const [newSalaryDay, setNewSalaryDay] = useState(salary.diaRecebimento.toString());
 
-  const handleSaveSalary = (e: React.FormEvent) => {
-    e.preventDefault();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(-8)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, { toValue: 1, duration: 500, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 500, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  const handleSaveSalary = () => {
     updateSalary(parseFloat(newSalaryVal) || 0, parseInt(newSalaryDay) || 5);
     setEditingSalary(false);
   };
 
+  const remainingColor = aggregates.remainingAvailable >= 0 ? '#10b981' : '#f43f5e';
+  const remainingBg   = aggregates.remainingAvailable >= 0 ? 'rgba(16,185,129,0.08)' : 'rgba(244,63,94,0.08)';
+  const remainingBorder = aggregates.remainingAvailable >= 0 ? 'rgba(16,185,129,0.25)' : 'rgba(244,63,94,0.25)';
+
   return (
-    <>
-      {/* Salary Widget */}
-      <section className="bg-gradient-to-r from-slate-900 to-slate-850 rounded-2xl border border-slate-800 p-4 md:p-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4 shadow-xl">
-        <div className="flex items-center gap-3.5 w-full md:w-auto">
-          <div className="h-11 w-11 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center shrink-0">
-            <DollarSign className="h-5.5 w-5.5" />
-          </div>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+      <View style={{
+        backgroundColor: '#0f1629',
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+        borderRadius: 24, padding: 20, gap: 16,
+      }}>
+        {/* Top row: icon + salary info */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 14 }}>
+          <View style={{
+            width: 48, height: 48, borderRadius: 14,
+            backgroundColor: 'rgba(16,185,129,0.1)',
+            borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)',
+            alignItems: 'center', justifyContent: 'center',
+            shadowColor: '#10b981', shadowOpacity: 0.3, shadowRadius: 8,
+          }}>
+            <DollarSign size={22} color="#10b981" />
+          </View>
+
           {editingSalary ? (
-            <form onSubmit={handleSaveSalary} className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 w-full">
-              <div className="flex flex-col flex-1">
-                <label className="text-[10px] text-slate-400 font-bold uppercase mb-1">Salário Mensal (R$)</label>
-                <input
-                  type="number"
-                  value={newSalaryVal}
-                  onChange={(e) => setNewSalaryVal(e.target.value)}
-                  className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-semibold text-sm w-full sm:w-36 focus:outline-none focus:border-indigo-500"
-                  placeholder="Valor"
-                />
-              </div>
-              <div className="flex flex-col">
-                <label className="text-[10px] text-slate-400 font-bold uppercase mb-1">Dia Recebimento</label>
-                <input
-                  type="number"
-                  min="1"
-                  max="31"
-                  value={newSalaryDay}
-                  onChange={(e) => setNewSalaryDay(e.target.value)}
-                  className="bg-slate-950 border border-slate-700 rounded-lg px-3 py-1.5 text-white font-semibold text-sm w-full sm:w-20 focus:outline-none focus:border-indigo-500"
-                  placeholder="Dia"
-                />
-              </div>
-              <div className="flex gap-2 mt-3 sm:mt-5 justify-end">
-                <button type="submit" className="p-2 rounded-lg bg-emerald-600 text-white hover:bg-emerald-500 transition flex-1 sm:flex-initial flex items-center justify-center">
-                  <Check className="h-4 w-4" />
-                </button>
-                <button 
-                  type="button" 
-                  onClick={() => setEditingSalary(false)} 
-                  className="p-2 rounded-lg bg-slate-700 text-slate-300 hover:text-white transition flex-1 sm:flex-initial flex items-center justify-center"
+            <View style={{ flex: 1, gap: 10 }}>
+              <View style={{ flexDirection: 'row', gap: 10 }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={labelStyle}>Salário (R$)</Text>
+                  <TextInput
+                    value={newSalaryVal}
+                    onChangeText={setNewSalaryVal}
+                    keyboardType="numeric"
+                    style={inputStyle}
+                    placeholderTextColor="#475569"
+                  />
+                </View>
+                <View style={{ width: 72 }}>
+                  <Text style={labelStyle}>Dia</Text>
+                  <TextInput
+                    value={newSalaryDay}
+                    onChangeText={setNewSalaryDay}
+                    keyboardType="numeric"
+                    style={inputStyle}
+                    placeholderTextColor="#475569"
+                  />
+                </View>
+              </View>
+              <View style={{ flexDirection: 'row', gap: 8 }}>
+                <TouchableOpacity
+                  onPress={handleSaveSalary}
+                  style={{
+                    flex: 1, height: 40, borderRadius: 12,
+                    backgroundColor: '#10b981',
+                    alignItems: 'center', justifyContent: 'center',
+                    shadowColor: '#10b981', shadowOpacity: 0.4, shadowRadius: 8,
+                  }}
                 >
-                  <X className="h-4 w-4" />
-                </button>
-              </div>
-            </form>
+                  <Check size={16} color="white" />
+                </TouchableOpacity>
+                <TouchableOpacity
+                  onPress={() => setEditingSalary(false)}
+                  style={{
+                    flex: 1, height: 40, borderRadius: 12,
+                    backgroundColor: 'rgba(255,255,255,0.06)',
+                    alignItems: 'center', justifyContent: 'center',
+                  }}
+                >
+                  <X size={16} color="#94a3b8" />
+                </TouchableOpacity>
+              </View>
+            </View>
           ) : (
-            <div>
-              <div className="text-xs text-slate-400 font-bold uppercase tracking-wider flex items-center gap-2">
-                Salário Mensal
-                <button
-                  onClick={() => {
+            <View style={{ flex: 1 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 1, textTransform: 'uppercase' }}>
+                  Salário Mensal
+                </Text>
+                <TouchableOpacity
+                  onPress={() => {
                     setNewSalaryVal(salary.salario.toString());
                     setNewSalaryDay(salary.diaRecebimento.toString());
                     setEditingSalary(true);
                   }}
-                  className="text-indigo-400 hover:text-indigo-300 text-[10px] underline ml-1 font-semibold"
+                  style={{
+                    flexDirection: 'row', alignItems: 'center', gap: 4,
+                    backgroundColor: 'rgba(99,102,241,0.1)',
+                    borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+                    paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6,
+                  }}
                 >
-                  Editar
-                </button>
-              </div>
-              <div className="text-xl md:text-2xl font-black text-white flex items-baseline gap-1.5">
+                  <Edit3 size={9} color="#818cf8" />
+                  <Text style={{ color: '#818cf8', fontSize: 9, fontWeight: '700' }}>Editar</Text>
+                </TouchableOpacity>
+              </View>
+              <Text style={{ color: 'white', fontSize: 26, fontWeight: '900', letterSpacing: -1, marginTop: 2 }}>
                 {formatBRL(salary.salario)}
-                <span className="text-xs font-semibold text-slate-400">todo dia {salary.diaRecebimento}</span>
-              </div>
-            </div>
+              </Text>
+              <Text style={{ color: '#475569', fontSize: 11, marginTop: 2 }}>
+                todo dia {salary.diaRecebimento}
+              </Text>
+            </View>
           )}
-        </div>
+        </View>
 
-        <div className="flex flex-row gap-3 w-full md:w-auto">
-          <div className="bg-slate-950/40 border border-slate-800/80 px-3.5 py-2.5 rounded-xl flex-1 md:flex-initial">
-            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider">Aportes Mensais</div>
-            <div className="text-base font-extrabold text-indigo-400 mt-0.5">{formatBRL(aggregates.totalAportes)}</div>
-          </div>
-          <div className="bg-slate-950/40 border border-slate-800/80 px-3.5 py-2.5 rounded-xl flex-1 md:flex-initial">
-            <div className="text-[9px] text-slate-400 font-bold uppercase tracking-wider flex items-center gap-1.5 flex-wrap">
-              <span>Livre p/ Gastar</span>
-              <span className="text-[7.5px] text-slate-500 font-medium normal-case">(salário - aportes - despesas pendentes)</span>
-            </div>
-            <div className={`text-base font-extrabold mt-0.5 ${aggregates.remainingAvailable >= 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+        {/* Bottom row: mini cards */}
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <View style={{
+            flex: 1, backgroundColor: 'rgba(99,102,241,0.08)',
+            borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+            borderRadius: 14, padding: 12,
+          }}>
+            <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>
+              Aportes Mensais
+            </Text>
+            <Text style={{ color: '#818cf8', fontSize: 15, fontWeight: '900', marginTop: 4 }}>
+              {formatBRL(aggregates.totalAportes)}
+            </Text>
+          </View>
+
+          <View style={{
+            flex: 1,
+            backgroundColor: remainingBg,
+            borderWidth: 1, borderColor: remainingBorder,
+            borderRadius: 14, padding: 12,
+          }}>
+            <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', letterSpacing: 0.8, textTransform: 'uppercase' }}>
+              Livre p/ Gastar
+            </Text>
+            <Text style={{ color: remainingColor, fontSize: 15, fontWeight: '900', marginTop: 4 }}>
               {formatBRL(aggregates.remainingAvailable)}
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Onboarding State for Empty Profiles */}
-      {salary.salario === 0 && (
-        <div className="bg-gradient-to-r from-indigo-950/30 to-slate-900 border border-indigo-500/30 rounded-2xl p-5 flex flex-col sm:flex-row items-center justify-between gap-4 shadow-xl">
-          <div className="flex items-center gap-3.5">
-            <div className="h-10 w-10 rounded-xl bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 flex items-center justify-center shrink-0">
-              <Sparkles className="h-5 w-5 animate-pulse" />
-            </div>
-            <div>
-              <h3 className="text-sm font-black text-white m-0">👋 Bem-vindo ao vest!</h3>
-              <p className="text-xs text-slate-300 leading-normal mt-0.5 m-0">
-                Comece cadastrando seu <strong>Salário Mensal</strong> no botão acima para que possamos analisar seu orçamento e programar seus investimentos!
-              </p>
-            </div>
-          </div>
-          <button
-            onClick={() => {
-              setNewSalaryVal(salary.salario.toString());
-              setNewSalaryDay(salary.diaRecebimento.toString());
-              setEditingSalary(true);
-              window.scrollTo({ top: 0, behavior: 'smooth' });
-            }}
-            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white rounded-xl text-xs font-bold transition shadow-lg shadow-indigo-600/20 w-full sm:w-auto text-center shrink-0"
-          >
-            Definir Salário Agora
-          </button>
-        </div>
-      )}
-    </>
+            </Text>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
   );
+};
+
+const labelStyle: any = {
+  color: '#64748b', fontSize: 10, fontWeight: '700',
+  letterSpacing: 0.5, textTransform: 'uppercase', marginBottom: 6,
+};
+
+const inputStyle: any = {
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.1)',
+  borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+  color: 'white', fontSize: 14, fontWeight: '600',
 };

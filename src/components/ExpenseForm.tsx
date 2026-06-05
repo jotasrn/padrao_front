@@ -1,33 +1,34 @@
 import React, { useState, useEffect } from 'react';
-import { TrendingDown, X } from 'lucide-react';
+import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
+import { TrendingDown, X } from 'lucide-react-native';
 import { Expense } from '../types';
 
 interface ExpenseFormProps {
   editingExpense: Expense | null;
   onSubmit: (data: {
-    descricao: string;
-    valor: number;
-    categoria: Expense['categoria'];
-    vencimento: number;
-    tipo: Expense['tipo'];
-    parcelasTotais?: number;
-    parcelaAtual?: number;
+    descricao: string; valor: number; categoria: Expense['categoria'];
+    vencimento: number; tipo: Expense['tipo'];
+    parcelasTotais?: number; parcelaAtual?: number;
   }) => void;
   onCancel: () => void;
 }
 
-export const ExpenseForm: React.FC<ExpenseFormProps> = ({
-  editingExpense,
-  onSubmit,
-  onCancel,
-}) => {
+const CATEGORY_COLORS: Record<string, string> = {
+  Moradia: '#38bdf8', Alimentação: '#fb923c', Transporte: '#a78bfa',
+  Saúde: '#34d399', Educação: '#f472b6', Outros: '#94a3b8',
+};
+
+export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubmit, onCancel }) => {
   const [expDesc, setExpDesc] = useState('');
-  const [expVal, setExpVal] = useState('');
-  const [expCat, setExpCat] = useState<Expense['categoria']>('Moradia');
-  const [expDay, setExpDay] = useState('5');
+  const [expVal,  setExpVal]  = useState('');
+  const [expCat,  setExpCat]  = useState<Expense['categoria']>('Moradia');
+  const [expDay,  setExpDay]  = useState('5');
   const [expTipo, setExpTipo] = useState<Expense['tipo']>('Recorrente');
   const [expParcelasTotais, setExpParcelasTotais] = useState('12');
-  const [expParcelaAtual, setExpParcelaAtual] = useState('1');
+  const [expParcelaAtual,   setExpParcelaAtual]   = useState('1');
+
+  const categories: Expense['categoria'][] = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Outros'];
+  const types: Expense['tipo'][] = ['Recorrente', 'Única', 'Parcelada'];
 
   useEffect(() => {
     if (editingExpense) {
@@ -39,159 +40,194 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({
       setExpParcelasTotais(editingExpense.parcelasTotais?.toString() || '12');
       setExpParcelaAtual(editingExpense.parcelaAtual?.toString() || '1');
     } else {
-      setExpDesc('');
-      setExpVal('');
-      setExpCat('Moradia');
-      setExpDay('5');
-      setExpTipo('Recorrente');
-      setExpParcelasTotais('12');
-      setExpParcelaAtual('1');
+      setExpDesc(''); setExpVal(''); setExpCat('Moradia');
+      setExpDay('5'); setExpTipo('Recorrente');
+      setExpParcelasTotais('12'); setExpParcelaAtual('1');
     }
   }, [editingExpense]);
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = () => {
     if (!expDesc || !expVal) return;
-
     onSubmit({
-      descricao: expDesc,
-      valor: parseFloat(expVal) || 0,
-      categoria: expCat,
-      vencimento: parseInt(expDay) || 5,
-      tipo: expTipo,
+      descricao: expDesc, valor: parseFloat(expVal) || 0,
+      categoria: expCat, vencimento: parseInt(expDay) || 5, tipo: expTipo,
       parcelasTotais: expTipo === 'Parcelada' ? parseInt(expParcelasTotais) || 12 : undefined,
-      parcelaAtual: expTipo === 'Parcelada' ? parseInt(expParcelaAtual) || 1 : undefined,
+      parcelaAtual:   expTipo === 'Parcelada' ? parseInt(expParcelaAtual)   || 1  : undefined,
     });
   };
 
   return (
-    <form onSubmit={handleSubmit} className="bg-slate-900 border border-slate-800 p-5 rounded-2xl shadow-xl max-w-2xl flex flex-col gap-4 animate-fadeIn">
-      <div className="flex justify-between items-center border-b border-slate-800 pb-3">
-        <h3 className="text-sm font-bold text-white flex items-center gap-1.5">
-          <TrendingDown className="h-4 w-4 text-rose-400" /> {editingExpense ? 'Editar Gasto' : 'Adicionar Novo Gasto'}
-        </h3>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-slate-400 hover:text-white"
-        >
-          <X className="h-4 w-4" />
-        </button>
-      </div>
+    <View style={formCard}>
+      {/* Header */}
+      <View style={formHeader}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <View style={{
+            width: 30, height: 30, borderRadius: 9,
+            backgroundColor: 'rgba(248,113,113,0.1)',
+            borderWidth: 1, borderColor: 'rgba(248,113,113,0.2)',
+            alignItems: 'center', justifyContent: 'center',
+          }}>
+            <TrendingDown size={14} color="#f87171" />
+          </View>
+          <Text style={formTitle}>{editingExpense ? 'Editar Gasto' : 'Novo Gasto'}</Text>
+        </View>
+        <TouchableOpacity onPress={onCancel} style={closeBtn}>
+          <X size={15} color="#64748b" />
+        </TouchableOpacity>
+      </View>
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Descrição/Nome do Gasto</label>
-          <input
-            type="text"
-            value={expDesc}
-            onChange={(e) => setExpDesc(e.target.value)}
-            required
-            placeholder="Ex: Conta de Luz, Internet, Mercado..."
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+      <View style={{ gap: 14 }}>
+        {/* Descrição */}
+        <View>
+          <Text style={fieldLabel}>Descrição</Text>
+          <TextInput
+            value={expDesc} onChangeText={setExpDesc}
+            placeholder="Ex: Conta de Luz, Netflix..." placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Valor (R$)</label>
-          <input
-            type="number"
-            value={expVal}
-            onChange={(e) => setExpVal(e.target.value)}
-            required
-            placeholder="0.00"
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        {/* Valor */}
+        <View>
+          <Text style={fieldLabel}>Valor (R$)</Text>
+          <TextInput
+            value={expVal} onChangeText={setExpVal}
+            keyboardType="numeric" placeholder="0,00" placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Categoria do Gasto</label>
-          <select
-            value={expCat}
-            onChange={(e) => setExpCat(e.target.value as Expense['categoria'])}
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-          >
-            <option value="Moradia">Moradia</option>
-            <option value="Alimentação">Alimentação</option>
-            <option value="Transporte">Transporte</option>
-            <option value="Saúde">Saúde</option>
-            <option value="Educação">Educação</option>
-            <option value="Outros">Outros</option>
-          </select>
-        </div>
+        {/* Categoria */}
+        <View>
+          <Text style={fieldLabel}>Categoria</Text>
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
+            <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 4, paddingVertical: 2 }}>
+              {categories.map((c) => {
+                const isActive = expCat === c;
+                const color = CATEGORY_COLORS[c];
+                return (
+                  <TouchableOpacity
+                    key={c} onPress={() => setExpCat(c)}
+                    style={{
+                      paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
+                      backgroundColor: isActive ? `${color}20` : 'rgba(255,255,255,0.04)',
+                      borderWidth: 1, borderColor: isActive ? `${color}60` : 'rgba(255,255,255,0.08)',
+                    }}
+                  >
+                    <Text style={{ color: isActive ? color : '#475569', fontSize: 12, fontWeight: '700' }}>{c}</Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+          </ScrollView>
+        </View>
 
-        <div className="flex flex-col">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Dia de Vencimento</label>
-          <input
-            type="number"
-            min="1"
-            max="31"
-            value={expDay}
-            onChange={(e) => setExpDay(e.target.value)}
-            required
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
+        {/* Dia vencimento */}
+        <View>
+          <Text style={fieldLabel}>Dia de Vencimento</Text>
+          <TextInput
+            value={expDay} onChangeText={setExpDay}
+            keyboardType="numeric" placeholderTextColor="#334155"
+            style={input}
           />
-        </div>
+        </View>
 
-        <div className="flex flex-col sm:col-span-2">
-          <label className="text-xs text-slate-400 font-bold mb-1.5">Frequência do Gasto</label>
-          <select
-            value={expTipo}
-            onChange={(e) => setExpTipo(e.target.value as Expense['tipo'])}
-            className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2.5 text-white text-sm focus:outline-none focus:border-indigo-500"
-          >
-            <option value="Recorrente">Mensal / Recorrente (Ex: Luz, Aluguel)</option>
-            <option value="Única">Gasto Único / Temporário (Ex: Compras pontuais, Faturas)</option>
-            <option value="Parcelada">Parcelado (Ex: Compras no Cartão)</option>
-          </select>
-        </div>
+        {/* Tipo */}
+        <View>
+          <Text style={fieldLabel}>Frequência</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            {types.map((t) => {
+              const isActive = expTipo === t;
+              return (
+                <TouchableOpacity
+                  key={t} onPress={() => setExpTipo(t)}
+                  style={{
+                    flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center',
+                    backgroundColor: isActive ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)',
+                    borderWidth: 1, borderColor: isActive ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)',
+                  }}
+                >
+                  <Text style={{ color: isActive ? '#818cf8' : '#475569', fontSize: 12, fontWeight: '700' }}>{t}</Text>
+                </TouchableOpacity>
+              );
+            })}
+          </View>
+        </View>
 
+        {/* Parcelas */}
         {expTipo === 'Parcelada' && (
-          <div className="grid grid-cols-2 gap-3 sm:col-span-2 bg-slate-950/40 p-4 rounded-xl border border-slate-800">
-            <div className="flex flex-col">
-              <label className="text-xs text-slate-400 font-bold mb-1.5">Total de Parcelas</label>
-              <input
-                type="number"
-                min="2"
-                value={expParcelasTotais}
-                onChange={(e) => setExpParcelasTotais(e.target.value)}
-                required
-                placeholder="Ex: 12"
-                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+          <View style={{
+            backgroundColor: 'rgba(245,158,11,0.06)',
+            borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)',
+            borderRadius: 14, padding: 14, flexDirection: 'row', gap: 12,
+          }}>
+            <View style={{ flex: 1 }}>
+              <Text style={fieldLabel}>Total Parcelas</Text>
+              <TextInput
+                value={expParcelasTotais} onChangeText={setExpParcelasTotais}
+                keyboardType="numeric" style={input}
               />
-            </div>
-            <div className="flex flex-col">
-              <label className="text-xs text-slate-400 font-bold mb-1.5">Parcela Atual</label>
-              <input
-                type="number"
-                min="1"
-                max={expParcelasTotais}
-                value={expParcelaAtual}
-                onChange={(e) => setExpParcelaAtual(e.target.value)}
-                required
-                placeholder="Ex: 1"
-                className="bg-slate-950 border border-slate-800 rounded-xl px-4 py-2 text-white text-sm focus:outline-none focus:border-indigo-500"
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text style={fieldLabel}>Parcela Atual</Text>
+              <TextInput
+                value={expParcelaAtual} onChangeText={setExpParcelaAtual}
+                keyboardType="numeric" style={input}
               />
-            </div>
-          </div>
+            </View>
+          </View>
         )}
-      </div>
+      </View>
 
-      <div className="flex justify-end gap-3 border-t border-slate-800 pt-3 mt-1.5">
-        <button
-          type="button"
-          onClick={onCancel}
-          className="px-4 py-2 text-xs font-bold text-slate-300 hover:text-white bg-slate-800 rounded-xl hover:bg-slate-750 transition"
-        >
-          Cancelar
-        </button>
-        <button
-          type="submit"
-          className="px-4 py-2 text-xs font-bold text-white bg-indigo-600 hover:bg-indigo-500 rounded-xl transition"
-        >
-          {editingExpense ? 'Salvar Alterações' : 'Salvar Gasto'}
-        </button>
-      </div>
-    </form>
+      {/* Footer */}
+      <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
+        <TouchableOpacity onPress={onCancel} style={btnSecondary}>
+          <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
+        </TouchableOpacity>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimary}>
+          <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
+            {editingExpense ? 'Salvar Alterações' : 'Salvar Gasto'}
+          </Text>
+        </TouchableOpacity>
+      </View>
+    </View>
   );
+};
+
+// Shared styles
+const formCard: any = {
+  backgroundColor: '#131b2e',
+  borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+  borderRadius: 22, padding: 20, gap: 16,
+  shadowColor: '#6366f1', shadowOpacity: 0.15, shadowRadius: 20,
+};
+const formHeader: any = {
+  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+  borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', paddingBottom: 14,
+};
+const formTitle: any = { color: 'white', fontWeight: '800', fontSize: 15 };
+const closeBtn: any = {
+  width: 30, height: 30, borderRadius: 8,
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  alignItems: 'center', justifyContent: 'center',
+};
+const fieldLabel: any = {
+  color: '#64748b', fontSize: 10, fontWeight: '700',
+  letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8,
+};
+const input: any = {
+  backgroundColor: 'rgba(255,255,255,0.04)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
+  color: 'white', fontSize: 14, fontWeight: '500',
+};
+const btnSecondary: any = {
+  flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+  backgroundColor: 'rgba(255,255,255,0.05)',
+  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+};
+const btnPrimary: any = {
+  flex: 2, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+  backgroundColor: '#6366f1',
+  shadowColor: '#6366f1', shadowOpacity: 0.5, shadowRadius: 10,
 };

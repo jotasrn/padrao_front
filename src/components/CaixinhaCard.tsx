@@ -1,5 +1,6 @@
-import React from 'react';
-import { PiggyBank, Pencil, Trash2 } from 'lucide-react';
+import React, { useRef, useEffect } from 'react';
+import { View, Text, TouchableOpacity, Animated } from 'react-native';
+import { PiggyBank, Pencil, Trash2, TrendingUp } from 'lucide-react-native';
 import { Caixinha } from '../types';
 
 interface CaixinhaCardProps {
@@ -9,86 +10,156 @@ interface CaixinhaCardProps {
   formatBRL: (val: number) => string;
 }
 
-export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({
-  cx,
-  onDelete,
-  onEdit,
-  formatBRL,
-}) => {
+const ACCENT_COLORS = ['#818cf8', '#34d399', '#38bdf8', '#fb923c', '#f472b6', '#a78bfa'];
+
+function getAccent(id: string) {
+  let hash = 0;
+  for (let i = 0; i < id.length; i++) hash = id.charCodeAt(i) + ((hash << 5) - hash);
+  return ACCENT_COLORS[Math.abs(hash) % ACCENT_COLORS.length];
+}
+
+export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit, formatBRL }) => {
   const CDI_ANUAL = 10.75;
   const cdiPct = cx.rendimentoCdiPct !== undefined && !isNaN(cx.rendimentoCdiPct) ? cx.rendimentoCdiPct : 100;
   const rendimentoAnualCdi = (cdiPct / 100) * (CDI_ANUAL / 100);
   const r = Math.pow(1 + rendimentoAnualCdi, 1 / 12) - 1;
 
-  // Simula o crescimento em 6 e 12 meses
-  const balance6 = cx.valorAtual * Math.pow(1 + r, 6) + 
-    cx.aporteMensal * ((Math.pow(1 + r, 6) - 1) / (r || 1));
-    
-  const balance12 = cx.valorAtual * Math.pow(1 + r, 12) + 
-    cx.aporteMensal * ((Math.pow(1 + r, 12) - 1) / (r || 1));
-
+  const balance6  = cx.valorAtual * Math.pow(1 + r, 6)  + cx.aporteMensal * ((Math.pow(1 + r, 6) - 1)  / (r || 1));
+  const balance12 = cx.valorAtual * Math.pow(1 + r, 12) + cx.aporteMensal * ((Math.pow(1 + r, 12) - 1) / (r || 1));
   const actualAnnualPct = cdiPct * (CDI_ANUAL / 100);
 
+  const accent = getAccent(cx.id);
+
+  const fadeAnim  = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(16)).current;
+
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim,  { toValue: 1, duration: 400, useNativeDriver: true }),
+      Animated.timing(slideAnim, { toValue: 0, duration: 400, useNativeDriver: true }),
+    ]).start();
+  }, []);
+
+  // Growth progress bar (percentage towards 12-month goal vs current)
+  const growthPct = cx.valorAtual > 0 ? Math.min(100, (cx.valorAtual / balance12) * 100) : 0;
+
   return (
-    <div className="bg-slate-900 border border-slate-800 p-5 rounded-2xl flex flex-col gap-4 shadow-xl relative overflow-hidden group">
-      <div className="absolute top-0 right-0 p-4 opacity-5 group-hover:opacity-10 transition">
-        <PiggyBank className="h-16 w-16 text-white" />
-      </div>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+      <View style={{
+        backgroundColor: '#0f1629',
+        borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+        borderRadius: 22, overflow: 'hidden',
+      }}>
+        {/* Accent stripe */}
+        <View style={{ height: 3, backgroundColor: accent, shadowColor: accent, shadowOpacity: 0.8, shadowRadius: 6 }} />
 
-      <div className="flex justify-between items-start">
-        <div className="min-w-0">
-          <h3 className="font-extrabold text-white text-base truncate pr-2">{cx.nome}</h3>
-          <span className="text-[10px] font-bold text-indigo-400 block mt-0.5">
-            Rende {cdiPct}% do CDI (~{actualAnnualPct.toFixed(2)}% a.a.)
-          </span>
-        </div>
-        <div className="flex gap-1 items-center shrink-0">
-          <button 
-            onClick={() => onEdit(cx)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-indigo-400 hover:bg-indigo-500/10 transition"
-            title="Editar caixinha"
-          >
-            <Pencil className="h-4 w-4" />
-          </button>
-          <button 
-            onClick={() => onDelete(cx.id)}
-            className="p-1.5 rounded-lg text-slate-400 hover:text-rose-400 hover:bg-rose-500/10 transition"
-            title="Excluir caixinha"
-          >
-            <Trash2 className="h-4 w-4" />
-          </button>
-        </div>
-      </div>
+        <View style={{ padding: 20, gap: 16 }}>
+          {/* Header row */}
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1 }}>
+              <View style={{
+                width: 40, height: 40, borderRadius: 12,
+                backgroundColor: `${accent}15`,
+                borderWidth: 1, borderColor: `${accent}30`,
+                alignItems: 'center', justifyContent: 'center',
+              }}>
+                <PiggyBank size={20} color={accent} />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }} numberOfLines={1}>
+                  {cx.nome}
+                </Text>
+                <Text style={{ color: accent, fontSize: 10, fontWeight: '700', marginTop: 2 }}>
+                  {cdiPct}% CDI · {actualAnnualPct.toFixed(2)}% a.a.
+                </Text>
+              </View>
+            </View>
 
-      <div className="bg-slate-950/40 p-4 rounded-xl border border-slate-800/80 flex justify-between gap-2">
-        <div>
-          <span className="text-[9px] text-slate-400 font-bold uppercase block">Acumulado</span>
-          <strong className="text-base font-black text-white">{formatBRL(cx.valorAtual)}</strong>
-        </div>
-        <div className="text-right">
-          <span className="text-[9px] text-slate-400 font-bold uppercase block">Aporte Mensal</span>
-          <strong className="text-base font-black text-emerald-400">{formatBRL(cx.aporteMensal)}</strong>
-        </div>
-      </div>
+            <View style={{ flexDirection: 'row', gap: 6 }}>
+              <TouchableOpacity
+                onPress={() => onEdit(cx)}
+                style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  backgroundColor: 'rgba(99,102,241,0.1)',
+                  borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Pencil size={14} color="#818cf8" />
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={() => onDelete(cx.id)}
+                style={{
+                  width: 32, height: 32, borderRadius: 9,
+                  backgroundColor: 'rgba(244,63,94,0.1)',
+                  borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)',
+                  alignItems: 'center', justifyContent: 'center',
+                }}
+              >
+                <Trash2 size={14} color="#f43f5e" />
+              </TouchableOpacity>
+            </View>
+          </View>
 
-      <div className="mt-1 text-xs border-t border-slate-800/80 pt-3">
-        <span className="text-[8px] text-slate-400 font-bold uppercase block mb-1.5">Simulação de Crescimento</span>
-        
-        <div className="flex flex-col gap-1.5">
-          <div className="flex justify-between text-[11px] text-slate-300">
-            <span>Em 6 meses (com juros):</span>
-            <span className="font-bold text-indigo-400">
-              {formatBRL(balance6)}
-            </span>
-          </div>
-          <div className="flex justify-between text-[11px] text-slate-300">
-            <span>Em 12 meses (com juros):</span>
-            <span className="font-bold text-indigo-400">
-              {formatBRL(balance12)}
-            </span>
-          </div>
-        </div>
-      </div>
-    </div>
+          {/* Values row */}
+          <View style={{
+            flexDirection: 'row', gap: 10,
+            backgroundColor: 'rgba(255,255,255,0.03)',
+            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+            borderRadius: 14, padding: 14,
+          }}>
+            <View style={{ flex: 1 }}>
+              <Text style={miniLabel}>Acumulado</Text>
+              <Text style={{ color: 'white', fontWeight: '900', fontSize: 17, marginTop: 4 }}>
+                {formatBRL(cx.valorAtual)}
+              </Text>
+            </View>
+            <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+            <View style={{ flex: 1, alignItems: 'flex-end' }}>
+              <Text style={miniLabel}>Aporte/mês</Text>
+              <Text style={{ color: '#10b981', fontWeight: '900', fontSize: 17, marginTop: 4 }}>
+                {formatBRL(cx.aporteMensal)}
+              </Text>
+            </View>
+          </View>
+
+          {/* Projections */}
+          <View style={{ gap: 10 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+              <TrendingUp size={12} color="#64748b" />
+              <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
+                Simulação de Crescimento
+              </Text>
+            </View>
+
+            <View style={{ flexDirection: 'row', gap: 10 }}>
+              <View style={{
+                flex: 1,
+                backgroundColor: `${accent}08`,
+                borderWidth: 1, borderColor: `${accent}20`,
+                borderRadius: 12, padding: 12, gap: 4,
+              }}>
+                <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>6 meses</Text>
+                <Text style={{ color: accent, fontWeight: '800', fontSize: 14 }}>{formatBRL(balance6)}</Text>
+              </View>
+              <View style={{
+                flex: 1,
+                backgroundColor: `${accent}12`,
+                borderWidth: 1, borderColor: `${accent}30`,
+                borderRadius: 12, padding: 12, gap: 4,
+              }}>
+                <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>12 meses</Text>
+                <Text style={{ color: accent, fontWeight: '800', fontSize: 14 }}>{formatBRL(balance12)}</Text>
+              </View>
+            </View>
+          </View>
+        </View>
+      </View>
+    </Animated.View>
   );
+};
+
+const miniLabel: any = {
+  color: '#475569', fontSize: 9, fontWeight: '700',
+  letterSpacing: 0.8, textTransform: 'uppercase',
 };
