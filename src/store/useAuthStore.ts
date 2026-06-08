@@ -1,27 +1,25 @@
 import { create } from 'zustand';
 
-interface Usuario {
-  id: number;
-  nome: string;
-  cargo: string;
-  token: string;
-}
-
 interface AuthState {
-  usuario: Usuario | null;
   autenticado: boolean;
-  setUsuario: (usuario: Usuario | null) => void;
-  logout: () => void;
+  biometriaSuportada: boolean | null;
+  privacidadeAtiva: boolean;
+  lastActiveTime: number;
+  setBiometriaSuportada: (suporta: boolean) => void;
+  unlockApp: () => void;
+  lockApp: () => void;
+  togglePrivacidade: () => void;
+  setLastActiveTime: (time: number) => void;
 }
 
 export const useAuthStore = create<AuthState>((set) => ({
-  usuario: {
-    id: 1,
-    nome: 'Desenvolvedor SEMOB',
-    cargo: 'Auditor Técnico',
-    token: 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...'
-  },
-  autenticado: true,
-  setUsuario: (usuario) => set({ usuario, autenticado: !!usuario }),
-  logout: () => set({ usuario: null, autenticado: false })
+  autenticado: false,
+  biometriaSuportada: null,
+  privacidadeAtiva: false,
+  lastActiveTime: 0,
+  setBiometriaSuportada: (suporta) => set({ biometriaSuportada: suporta }),
+  unlockApp: () => set({ autenticado: true }),
+  lockApp: () => set({ autenticado: false }),
+  togglePrivacidade: () => set((state) => ({ privacidadeAtiva: !state.privacidadeAtiva })),
+  setLastActiveTime: (time) => set({ lastActiveTime: time })
 }));

@@ -12,14 +12,21 @@
       "backgroundColor": "#0f172a"
     },
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "infoPlist": {
+        "NSFaceIDUsageDescription": "Acesse seus dados financeiros com segurança usando Face ID."
+      }
     },
     "android": {
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#0f172a"
       },
-      "package": "com.jottasrn.vestfinance"
+      "package": "com.jottasrn.vestfinance",
+      "permissions": [
+        "USE_BIOMETRIC",
+        "USE_FINGERPRINT"
+      ]
     },
     "web": {
       "favicon": "./assets/images/favicon.png",
@@ -28,7 +35,8 @@
     },
     "scheme": "vestfinance",
     "plugins": [
-      "expo-router"
+      "expo-router",
+      "expo-local-authentication"
     ]
   }
 }

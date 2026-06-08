@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
-import { TrendingDown, Pencil, Trash2, Plus, Check } from 'lucide-react-native';
+import {
+  TrendingDown, Pencil, Trash2, Plus, Check,
+  Home, Utensils, Car, HeartPulse, GraduationCap, Grid
+} from 'lucide-react-native';
 import { Expense, Aggregates } from '../types';
+import { useApp } from '../context/AppProvider';
 
 interface ExpenseListProps {
   expenses: Expense[];
@@ -22,6 +26,15 @@ const CATEGORY_COLORS: Record<string, string> = {
   Outros: '#94a3b8',
 };
 
+const CATEGORY_ICONS: Record<string, any> = {
+  Moradia: Home,
+  Alimentação: Utensils,
+  Transporte: Car,
+  Saúde: HeartPulse,
+  Educação: GraduationCap,
+  Outros: Grid,
+};
+
 const TYPE_CONFIG: Record<string, { label: string; color: string }> = {
   Recorrente: { label: 'Recorrente', color: '#818cf8' },
   Única:      { label: 'Único',      color: '#38bdf8'  },
@@ -32,11 +45,27 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
   expenses, aggregates, toggleExpensePaid, deleteExpense,
   startEditExpense, formatBRL, onShowAddExpense,
 }) => {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textPrimary = isDark ? 'white' : '#0f172a';
+  const textSecondary = isDark ? '#64748b' : '#475569';
+  const itemBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const lineSeparator = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const editBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.03)';
+
+  const miniLabelStyle = {
+    color: textSecondary, fontSize: 9, fontWeight: '700',
+    letterSpacing: 0.8, textTransform: 'uppercase',
+  };
+
   if (expenses.length === 0) {
     return (
       <View style={{
-        backgroundColor: '#0f1629',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: cardBg,
+        borderWidth: 1, borderColor: cardBorder,
         borderRadius: 22, paddingVertical: 48, alignItems: 'center', gap: 12,
       }}>
         <View style={{
@@ -48,8 +77,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
           <TrendingDown size={28} color="#f87171" />
         </View>
         <View style={{ alignItems: 'center', gap: 6 }}>
-          <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 14 }}>Nenhuma despesa cadastrada!</Text>
-          <Text style={{ color: '#475569', fontSize: 12, textAlign: 'center', paddingHorizontal: 32 }}>
+          <Text style={{ color: textSecondary, fontWeight: '700', fontSize: 14 }}>Nenhuma despesa cadastrada!</Text>
+          <Text style={{ color: isDark ? '#475569' : '#94a3b8', fontSize: 12, textAlign: 'center', paddingHorizontal: 32 }}>
             Cadastre seus gastos para controlar seu orçamento.
           </Text>
         </View>
@@ -75,21 +104,21 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       {/* Summary row */}
       <View style={{ flexDirection: 'row', gap: 10 }}>
         <View style={{
-          flex: 1, backgroundColor: 'rgba(16,185,129,0.08)',
-          borderWidth: 1, borderColor: 'rgba(16,185,129,0.2)',
+          flex: 1, backgroundColor: isDark ? 'rgba(16,185,129,0.08)' : 'rgba(16,185,129,0.04)',
+          borderWidth: 1, borderColor: isDark ? 'rgba(16,185,129,0.2)' : 'rgba(16,185,129,0.12)',
           borderRadius: 14, padding: 12,
         }}>
-          <Text style={miniLabel}>Pagos</Text>
+          <Text style={miniLabelStyle as any}>Pagos</Text>
           <Text style={{ color: '#10b981', fontWeight: '900', fontSize: 15, marginTop: 4 }}>
             {formatBRL(aggregates.paidExpenses)}
           </Text>
         </View>
         <View style={{
-          flex: 1, backgroundColor: 'rgba(244,63,94,0.08)',
-          borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)',
+          flex: 1, backgroundColor: isDark ? 'rgba(244,63,94,0.08)' : 'rgba(244,63,94,0.04)',
+          borderWidth: 1, borderColor: isDark ? 'rgba(244,63,94,0.2)' : 'rgba(244,63,94,0.12)',
           borderRadius: 14, padding: 12,
         }}>
-          <Text style={miniLabel}>A Pagar</Text>
+          <Text style={miniLabelStyle as any}>A Pagar</Text>
           <Text style={{ color: '#f43f5e', fontWeight: '900', fontSize: 15, marginTop: 4 }}>
             {formatBRL(aggregates.unpaidExpenses)}
           </Text>
@@ -104,8 +133,8 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
 
         return (
           <View key={exp.id} style={{
-            backgroundColor: '#0f1629',
-            borderWidth: 1, borderColor: isPaid ? 'rgba(16,185,129,0.15)' : 'rgba(255,255,255,0.06)',
+            backgroundColor: cardBg,
+            borderWidth: 1, borderColor: isPaid ? 'rgba(16,185,129,0.2)' : itemBorder,
             borderRadius: 18, overflow: 'hidden',
           }}>
             {/* Left accent bar */}
@@ -116,7 +145,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                 <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'flex-start' }}>
                   <View style={{ flex: 1, paddingRight: 10 }}>
                     <Text style={{
-                      color: isPaid ? '#475569' : 'white',
+                      color: isPaid ? textSecondary : textPrimary,
                       fontWeight: '700', fontSize: 14,
                       textDecorationLine: isPaid ? 'line-through' : 'none',
                     }}>
@@ -125,10 +154,15 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                     <View style={{ flexDirection: 'row', gap: 6, marginTop: 6, flexWrap: 'wrap' }}>
                       {/* Category badge */}
                       <View style={{
+                        flexDirection: 'row', alignItems: 'center', gap: 4,
                         paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6,
                         backgroundColor: `${catColor}15`,
                         borderWidth: 1, borderColor: `${catColor}30`,
                       }}>
+                        {(() => {
+                          const IconComp = CATEGORY_ICONS[exp.categoria] || Grid;
+                          return <IconComp size={10} color={catColor} />;
+                        })()}
                         <Text style={{ color: catColor, fontSize: 9, fontWeight: '800' }}>
                           {exp.categoria}
                         </Text>
@@ -148,7 +182,7 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                     </View>
                   </View>
                   <Text style={{
-                    color: isPaid ? '#475569' : 'white',
+                    color: isPaid ? textSecondary : textPrimary,
                     fontWeight: '900', fontSize: 15,
                     textDecorationLine: isPaid ? 'line-through' : 'none',
                   }}>
@@ -159,10 +193,10 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                 {/* Bottom row */}
                 <View style={{
                   flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-                  borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.05)', paddingTop: 10,
+                  borderTopWidth: 1, borderTopColor: lineSeparator, paddingTop: 10,
                 }}>
-                  <Text style={{ color: '#475569', fontSize: 10, fontWeight: '600' }}>
-                    Vence dia {exp.vencimento}
+                  <Text style={{ color: textSecondary, fontSize: 10, fontWeight: '600' }}>
+                    Vence dia {exp.diaVencimento}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     {/* Paid toggle */}
@@ -189,11 +223,11 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                       onPress={() => startEditExpense(exp)}
                       style={{
                         width: 28, height: 28, borderRadius: 8,
-                        backgroundColor: 'rgba(255,255,255,0.05)',
+                        backgroundColor: editBg,
                         alignItems: 'center', justifyContent: 'center',
                       }}
                     >
-                      <Pencil size={12} color="#64748b" />
+                      <Pencil size={12} color={textSecondary} />
                     </TouchableOpacity>
                     <TouchableOpacity
                       onPress={() => deleteExpense(exp.id)}
@@ -214,9 +248,4 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
       })}
     </View>
   );
-};
-
-const miniLabel: any = {
-  color: '#64748b', fontSize: 9, fontWeight: '700',
-  letterSpacing: 0.8, textTransform: 'uppercase',
 };

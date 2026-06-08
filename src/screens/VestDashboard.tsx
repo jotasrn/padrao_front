@@ -1,13 +1,17 @@
 import React, { useState, useRef, useEffect } from 'react';
 import {
-  View, Text, TouchableOpacity, ScrollView, SafeAreaView,
-  Platform, Animated, Pressable, StatusBar,
+  View, Text, TouchableOpacity, ScrollView, TextInput,
+  Platform, Animated, Pressable, StatusBar, Share, Alert, ActivityIndicator
 } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
+import Svg, { Circle, G } from 'react-native-svg';
 import {
   TrendingUp, TrendingDown, Plus, Trash2, PiggyBank,
-  Target, Sparkles, PieChart, CalendarDays, RotateCcw,
+  Target, Sparkles, PieChart, CalendarDays, RotateCcw, Download, Eye, EyeOff
 } from 'lucide-react-native';
 import { useVest } from '../hooks/useVest';
+import { useAuthStore } from '../store/useAuthStore';
+import { useApp } from '../context/AppProvider';
 import { formatarData } from '../utils/formatters';
 import { Expense, Caixinha, Goal } from '../types';
 
@@ -35,8 +39,20 @@ export default function VestDashboard() {
     salary, expenses, caixinhas, goals, aggregates, projections,
     goalPredictions, updateSalary, addExpense, updateExpense, deleteExpense,
     toggleExpensePaid, addCaixinha, updateCaixinha, deleteCaixinha,
-    addGoal, updateGoal, deleteGoal, resetToDefault,
+    addGoal, updateGoal, deleteGoal, resetToDefault, isLoading,
   } = useVest();
+
+  const { privacidadeAtiva, togglePrivacidade } = useAuthStore();
+  const { theme, toggleTheme } = useApp();
+
+  const isDark = theme === 'dark';
+  const bgColor = isDark ? '#080b14' : '#f8fafc';
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textPrimary = isDark ? '#ffffff' : '#0f172a';
+  const textSecondary = isDark ? '#94a3b8' : '#475569';
+  const textMuted = isDark ? '#475569' : '#94a3b8';
+  const borderLight = isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.1)';
 
   const [activeTab, setActiveTab] = useState<Tab>('overview');
   const [showAddExpense, setShowAddExpense] = useState(false);
@@ -69,7 +85,67 @@ export default function VestDashboard() {
   const showFab = activeTab === 'expenses' || activeTab === 'caixinhas' || activeTab === 'goals';
 
   const formatBRL = (val: number) =>
-    `R$ ${val.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`;
+    privacidadeAtiva
+      ? 'R$ ••••'
+      : `R$ ${val.toFixed(2).replace('.', ',').replace(/(\d)(?=(\d{3})+(?!\d))/g, '$1.')}`;
+
+  const handleExportCSV = async () => {
+    try {
+      let csv = '\uFEFF';
+      csv += 'Categoria,Nome,Valor,Pago/Meta,Detalhes\n';
+      csv += `Receita,Salário Mensal,${salary.salario},Recebido no dia ${salary.diaRecebimento},\n`;
+      
+      expenses.forEach(exp => {
+        csv += `Despesa,${exp.descricao.replace(/,/g, ' ')},${exp.valor},${exp.pago ? 'Pago' : 'Pendente'},Vence dia ${exp.diaVencimento}\n`;
+      });
+      
+      caixinhas.forEach(cx => {
+        csv += `Caixinha,${cx.nome.replace(/,/g, ' ')},${cx.saldo},Aporte ${cx.aporteMensal},Rendimento ${cx.taxaRendimento}%/ano\n`;
+      });
+      
+      goals.forEach(g => {
+        csv += `Meta,${g.nome.replace(/,/g, ' ')},${g.valorObjetivo},Prazo ${g.prazoMeses} meses,\n`;
+      });
+
+      await Share.share({
+        message: csv,
+        title: 'Vest Finance Export.csv'
+      });
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível exportar os dados em CSV.');
+    }
+  };
+
+  const handleImportText = (text: string) => {
+    if (!text.trim()) return;
+    
+    const moneyRegex = /(?:R\$|r\$)\s*([0-9]+(?:\.[0-9]{3})*(?:,[0-9]{2})?)|([0-9]+,[0-9]{2})/i;
+    const match = text.match(moneyRegex);
+    
+    let parsedValue = 0;
+    if (match) {
+      const valueStr = (match[1] || match[2])
+        .replace(/\./g, '')
+        .replace(',', '.');
+      parsedValue = parseFloat(valueStr) || 0;
+    }
+    
+    let description = 'Gasto Importado';
+    if (text.toLowerCase().includes('pix')) {
+      description = 'Transação Pix';
+    } else if (text.toLowerCase().includes('compra') || text.toLowerCase().includes('aprovada')) {
+      description = 'Compra Cartão';
+    }
+    
+    setEditingExpense({
+      id: '',
+      descricao: description,
+      valor: parsedValue,
+      diaVencimento: new Date().getDate(),
+      pago: false
+    } as any);
+    setShowAddExpense(true);
+  };
 
   const handleExpenseSubmit = (data: any) => {
     if (editingExpense) { updateExpense({ ...editingExpense, ...data }); setEditingExpense(null); }
@@ -104,18 +180,38 @@ export default function VestDashboard() {
     if (activeTab === 'goals') { setEditingGoal(null); setShowAddGoal(v => !v); }
   };
 
+  const handleExportData = async () => {
+    const exportData = { salary, expenses, caixinhas, goals };
+    try {
+      await Share.share({
+        message: JSON.stringify(exportData, null, 2),
+        title: 'Vest Finance Backup'
+      });
+    } catch (error) {
+      Alert.alert('Erro', 'Não foi possível exportar os dados');
+    }
+  };
+
   const fabOpacity = fabGlow.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
 
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, backgroundColor: bgColor, justifyContent: 'center', alignItems: 'center' }}>
+        <ActivityIndicator size="large" color="#6366f1" />
+      </View>
+    );
+  }
+
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#080b14' }}>
-      <StatusBar barStyle="light-content" backgroundColor="#080b14" />
+    <SafeAreaView style={{ flex: 1, backgroundColor: bgColor }}>
+      <StatusBar barStyle={isDark ? 'light-content' : 'dark-content'} backgroundColor={bgColor} />
 
       {/* ── HEADER ── */}
       <View style={{
         flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
         paddingHorizontal: 20, paddingVertical: 14,
-        backgroundColor: '#080b14',
-        borderBottomWidth: 1, borderBottomColor: 'rgba(99,102,241,0.15)',
+        backgroundColor: bgColor,
+        borderBottomWidth: 1, borderBottomColor: borderLight,
       }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
           {/* Logo badge */}
@@ -128,7 +224,7 @@ export default function VestDashboard() {
             <TrendingUp size={18} color="white" />
           </View>
           <View>
-            <Text style={{ color: 'white', fontWeight: '900', fontSize: 17, letterSpacing: -0.5 }}>
+            <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 17, letterSpacing: -0.5 }}>
               vest
             </Text>
             <Text style={{ color: '#6366f1', fontSize: 9, fontWeight: '700', letterSpacing: 2, marginTop: -1 }}>
@@ -137,17 +233,52 @@ export default function VestDashboard() {
           </View>
         </View>
 
-        <TouchableOpacity
-          onPress={resetToDefault}
-          style={{
-            width: 36, height: 36, borderRadius: 10,
-            backgroundColor: 'rgba(244,63,94,0.1)',
-            borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)',
-            alignItems: 'center', justifyContent: 'center',
-          }}
-        >
-          <RotateCcw size={15} color="#f43f5e" />
-        </TouchableOpacity>
+        <View style={{ flexDirection: 'row', gap: 10 }}>
+          <TouchableOpacity
+            onPress={toggleTheme}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: isDark ? 'rgba(251,146,60,0.1)' : 'rgba(99,102,241,0.1)',
+              borderWidth: 1, borderColor: isDark ? 'rgba(251,146,60,0.2)' : 'rgba(99,102,241,0.2)',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {isDark ? <Sun size={15} color="#fb923c" /> : <Moon size={15} color="#6366f1" />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={togglePrivacidade}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: privacidadeAtiva ? 'rgba(239,68,68,0.1)' : 'rgba(16,185,129,0.1)',
+              borderWidth: 1, borderColor: privacidadeAtiva ? 'rgba(239,68,68,0.2)' : 'rgba(16,185,129,0.2)',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            {privacidadeAtiva ? <EyeOff size={15} color="#ef4444" /> : <Eye size={15} color="#10b981" />}
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={handleExportCSV}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: 'rgba(56,189,248,0.1)',
+              borderWidth: 1, borderColor: 'rgba(56,189,248,0.2)',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <Download size={15} color="#38bdf8" />
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={resetToDefault}
+            style={{
+              width: 36, height: 36, borderRadius: 10,
+              backgroundColor: 'rgba(244,63,94,0.1)',
+              borderWidth: 1, borderColor: 'rgba(244,63,94,0.2)',
+              alignItems: 'center', justifyContent: 'center',
+            }}
+          >
+            <RotateCcw size={15} color="#f43f5e" />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {/* ── CONTENT ── */}
@@ -208,6 +339,32 @@ export default function VestDashboard() {
         {activeTab === 'expenses' && (
           <View style={{ gap: 16 }}>
             <TabHeader title="Receitas e Despesas" subtitle="Gerencie seus custos mensais." />
+            
+            {/* PIX/SMS Fast Import Box */}
+            <View style={{
+              backgroundColor: '#0f1629',
+              borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
+              borderRadius: 18, padding: 14, gap: 10,
+            }}>
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>Importação Rápida PIX / SMS</Text>
+              <Text style={{ color: '#64748b', fontSize: 11 }}>Cole a mensagem de texto ou PIX recebida para preencher automaticamente.</Text>
+              <TextInput
+                placeholder="Cole aqui. Ex: Compra de R$ 45,90 aprovada..."
+                placeholderTextColor="#475569"
+                onChangeText={(val) => {
+                  if (val.length > 10) {
+                    handleImportText(val);
+                  }
+                }}
+                style={{
+                  backgroundColor: 'rgba(255,255,255,0.04)',
+                  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
+                  borderRadius: 10, paddingHorizontal: 12, paddingVertical: 8,
+                  color: 'white', fontSize: 12,
+                }}
+              />
+            </View>
+
             {showAddExpense && (
               <ExpenseForm
                 editingExpense={editingExpense}
@@ -321,8 +478,8 @@ export default function VestDashboard() {
       {/* ── BOTTOM TAB BAR ── */}
       <View style={{
         flexDirection: 'row',
-        backgroundColor: '#0f1629',
-        borderTopWidth: 1, borderTopColor: 'rgba(255,255,255,0.06)',
+        backgroundColor: isDark ? '#0f1629' : '#ffffff',
+        borderTopWidth: 1, borderTopColor: cardBorder,
         paddingTop: 10,
         paddingBottom: Platform.OS === 'ios' ? 28 : 12,
         paddingHorizontal: 4,
@@ -364,11 +521,18 @@ export default function VestDashboard() {
 // ── Sub-components ──
 
 function StatCard({ label, value, color, flex }: { label: string; value: string; color: string; flex?: boolean }) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textPrimary = isDark ? '#ffffff' : '#0f172a';
+  const textSecondary = isDark ? '#64748b' : '#475569';
+
   return (
     <View style={{
       flex: flex ? 1 : undefined,
-      backgroundColor: '#0f1629',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: cardBg,
+      borderWidth: 1, borderColor: cardBorder,
       borderRadius: 18, padding: 16,
     }}>
       <View style={{
@@ -376,10 +540,10 @@ function StatCard({ label, value, color, flex }: { label: string; value: string;
         backgroundColor: color, marginBottom: 10,
         shadowColor: color, shadowOpacity: 1, shadowRadius: 6,
       }} />
-      <Text style={{ color: '#64748b', fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>
+      <Text style={{ color: textSecondary, fontSize: 10, fontWeight: '700', letterSpacing: 0.5, textTransform: 'uppercase' }}>
         {label}
       </Text>
-      <Text style={{ color: 'white', fontSize: 18, fontWeight: '900', marginTop: 4 }}>
+      <Text style={{ color: textPrimary, fontSize: 18, fontWeight: '900', marginTop: 4 }}>
         {value}
       </Text>
     </View>
@@ -387,61 +551,125 @@ function StatCard({ label, value, color, flex }: { label: string; value: string;
 }
 
 function BudgetCard({ aggregates, salary, formatBRL }: any) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textPrimary = isDark ? '#ffffff' : '#0f172a';
+  const textSecondary = isDark ? '#94a3b8' : '#475569';
+
   const salarioBase = salary.salario || 1;
-  const expPct = Math.min(100, (aggregates.totalExpenses / salarioBase) * 100);
-  const aportePct = Math.min(100, (aggregates.totalAportes / salarioBase) * 100);
+  const totalVal = aggregates.totalExpenses + aggregates.totalAportes + Math.max(0, aggregates.remainingAvailable);
+  const total = totalVal || 1;
+
+  const expPct = (aggregates.totalExpenses / total) * 100;
+  const aportePct = (aggregates.totalAportes / total) * 100;
   const livreVal = Math.max(0, aggregates.remainingAvailable);
-  const livrePct = Math.min(100, (livreVal / salarioBase) * 100);
+  const livrePct = (livreVal / total) * 100;
+
+  const circumference = 251.3;
+  const r = 40;
+  
+  const strokeDash1 = (expPct / 100) * circumference;
+  const strokeDash2 = (aportePct / 100) * circumference;
+  const strokeDash3 = (livrePct / 100) * circumference;
+  
+  const offset1 = 0;
+  const offset2 = -strokeDash1;
+  const offset3 = -(strokeDash1 + strokeDash2);
 
   return (
     <View style={{
-      backgroundColor: '#0f1629',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: cardBg,
+      borderWidth: 1, borderColor: cardBorder,
       borderRadius: 20, padding: 20, gap: 16,
     }}>
-      <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }}>Distribuição do Orçamento</Text>
+      <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 15 }}>Distribuição do Orçamento</Text>
 
-      {[
-        { label: 'Despesas', pct: expPct, val: aggregates.totalExpenses, color: '#f87171' },
-        { label: 'Caixinhas', pct: aportePct, val: aggregates.totalAportes, color: '#818cf8' },
-        { label: 'Livre', pct: livrePct, val: livreVal, color: '#34d399' },
-      ].map(item => (
-        <View key={item.label} style={{ gap: 6 }}>
-          <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700' }}>
-              {item.label} ({Math.round(item.pct)}%)
-            </Text>
-            <Text style={{ color: item.color, fontSize: 11, fontWeight: '800' }}>
-              {formatBRL(item.val)}
-            </Text>
-          </View>
-          <View style={{ height: 6, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 4 }}>
-            <View style={{
-              height: 6, width: `${item.pct}%`, borderRadius: 4,
-              backgroundColor: item.color,
-              shadowColor: item.color, shadowOpacity: 0.6, shadowRadius: 4,
-            }} />
+      <View style={{ flexDirection: 'row', alignItems: 'center', gap: 20 }}>
+        {/* Donut Chart */}
+        <View style={{ width: 100, height: 100, alignItems: 'center', justifyContent: 'center' }}>
+          <Svg width={100} height={100} viewBox="0 0 100 100">
+            <G rotation="-90" origin="50, 50">
+              <Circle cx="50" cy="50" r={r} stroke={isDark ? '#1e293b' : '#e2e8f0'} strokeWidth="8" fill="none" />
+              {totalVal === 0 ? (
+                <Circle cx="50" cy="50" r={r} stroke={isDark ? '#334155' : '#cbd5e1'} strokeWidth="8" fill="none" />
+              ) : (
+                <>
+                  {strokeDash1 > 0 && (
+                    <Circle cx="50" cy="50" r={r} stroke="#f87171" strokeWidth="8"
+                      strokeDasharray={`${strokeDash1} ${circumference}`}
+                      strokeDashoffset={offset1} strokeLinecap="round" fill="none" />
+                  )}
+                  {strokeDash2 > 0 && (
+                    <Circle cx="50" cy="50" r={r} stroke="#818cf8" strokeWidth="8"
+                      strokeDasharray={`${strokeDash2} ${circumference}`}
+                      strokeDashoffset={offset2} strokeLinecap="round" fill="none" />
+                  )}
+                  {strokeDash3 > 0 && (
+                    <Circle cx="50" cy="50" r={r} stroke="#34d399" strokeWidth="8"
+                      strokeDasharray={`${strokeDash3} ${circumference}`}
+                      strokeDashoffset={offset3} strokeLinecap="round" fill="none" />
+                  )}
+                </>
+              )}
+            </G>
+          </Svg>
+          <View style={{ position: 'absolute', alignItems: 'center' }}>
+            <Text style={{ color: textSecondary, fontSize: 7, fontWeight: '700', textTransform: 'uppercase', letterSpacing: 0.5 }}>Total</Text>
+            <Text style={{ color: textPrimary, fontSize: 11, fontWeight: '900', marginTop: 1 }}>{formatBRL(totalVal)}</Text>
           </View>
         </View>
-      ))}
+
+        {/* Legend */}
+        <View style={{ flex: 1, gap: 10 }}>
+          {[
+            { label: 'Despesas', pct: (aggregates.totalExpenses / salarioBase) * 100, val: aggregates.totalExpenses, color: '#f87171' },
+            { label: 'Caixinhas', pct: (aggregates.totalAportes / salarioBase) * 100, val: aggregates.totalAportes, color: '#818cf8' },
+            { label: 'Livre', pct: (livreVal / salarioBase) * 100, val: livreVal, color: '#34d399' },
+          ].map(item => (
+            <View key={item.label} style={{ gap: 2 }}>
+              <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: item.color }} />
+                  <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700' }}>{item.label}</Text>
+                </View>
+                <Text style={{ color: textPrimary, fontSize: 11, fontWeight: '800' }}>{formatBRL(item.val)}</Text>
+              </View>
+              <Text style={{ color: isDark ? '#475569' : '#94a3b8', fontSize: 10, marginLeft: 14 }}>{Math.round(item.pct)}% do salário</Text>
+            </View>
+          ))}
+        </View>
+      </View>
     </View>
   );
 }
 
 function TabHeader({ title, subtitle }: { title: string; subtitle: string }) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+  const textPrimary = isDark ? 'white' : '#0f172a';
+  const textSecondary = isDark ? '#64748b' : '#475569';
+
   return (
     <View style={{ marginBottom: 4 }}>
-      <Text style={{ color: 'white', fontWeight: '900', fontSize: 20, letterSpacing: -0.3 }}>{title}</Text>
-      <Text style={{ color: '#64748b', fontSize: 12, marginTop: 2 }}>{subtitle}</Text>
+      <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 20, letterSpacing: -0.3 }}>{title}</Text>
+      <Text style={{ color: textSecondary, fontSize: 12, marginTop: 2 }}>{subtitle}</Text>
     </View>
   );
 }
 
 function EmptyState({ icon: Icon, message, color }: { icon: any; message: string; color: string }) {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const textMuted = isDark ? '#475569' : '#94a3b8';
+
   return (
     <View style={{
-      backgroundColor: '#0f1629',
-      borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+      backgroundColor: cardBg,
+      borderWidth: 1, borderColor: cardBorder,
       borderRadius: 20, paddingVertical: 48, alignItems: 'center', gap: 12,
     }}>
       <View style={{
@@ -452,7 +680,7 @@ function EmptyState({ icon: Icon, message, color }: { icon: any; message: string
       }}>
         <Icon size={30} color={color} />
       </View>
-      <Text style={{ color: '#475569', fontWeight: '700', fontSize: 14 }}>{message}</Text>
+      <Text style={{ color: textMuted, fontWeight: '700', fontSize: 14 }}>{message}</Text>
     </View>
   );
 }

@@ -1,5 +1,6 @@
 import React from 'react';
 import { TouchableOpacity, Text, ActivityIndicator, ViewStyle } from 'react-native';
+import { useApp } from '../context/AppProvider';
 
 interface ButtonProps {
   children: React.ReactNode;
@@ -11,14 +12,6 @@ interface ButtonProps {
   style?: ViewStyle;
 }
 
-const VARIANTS: Record<string, { bg: string; text: string; border: string; shadow: string }> = {
-  primary:   { bg: '#6366f1', text: '#ffffff', border: 'transparent', shadow: '#6366f1' },
-  secondary: { bg: 'rgba(255,255,255,0.06)', text: '#94a3b8', border: 'rgba(255,255,255,0.1)', shadow: 'transparent' },
-  danger:    { bg: '#f43f5e', text: '#ffffff', border: 'transparent', shadow: '#f43f5e' },
-  success:   { bg: '#10b981', text: '#ffffff', border: 'transparent', shadow: '#10b981' },
-  outline:   { bg: 'transparent', text: '#818cf8', border: 'rgba(99,102,241,0.4)', shadow: 'transparent' },
-};
-
 const SIZES: Record<string, { py: number; px: number; fontSize: number; borderRadius: number }> = {
   sm: { py: 7,  px: 14, fontSize: 12, borderRadius: 9  },
   md: { py: 11, px: 20, fontSize: 14, borderRadius: 12 },
@@ -29,6 +22,22 @@ export const Button: React.FC<ButtonProps> = ({
   children, variant = 'primary', size = 'md',
   loading = false, onPress, disabled = false, style,
 }) => {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  const VARIANTS: Record<string, { bg: string; text: string; border: string; shadow: string }> = {
+    primary:   { bg: '#6366f1', text: '#ffffff', border: 'transparent', shadow: '#6366f1' },
+    secondary: { 
+      bg: isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)', 
+      text: isDark ? '#94a3b8' : '#475569', 
+      border: isDark ? 'rgba(255,255,255,0.1)' : 'rgba(0,0,0,0.08)', 
+      shadow: 'transparent' 
+    },
+    danger:    { bg: '#f43f5e', text: '#ffffff', border: 'transparent', shadow: '#f43f5e' },
+    success:   { bg: '#10b981', text: '#ffffff', border: 'transparent', shadow: '#10b981' },
+    outline:   { bg: 'transparent', text: '#818cf8', border: 'rgba(99,102,241,0.4)', shadow: 'transparent' },
+  };
+
   const v = VARIANTS[variant];
   const s = SIZES[size];
   const isDisabled = disabled || loading;

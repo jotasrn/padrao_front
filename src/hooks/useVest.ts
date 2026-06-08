@@ -2,13 +2,35 @@ import { useState, useEffect, useMemo } from 'react';
 import { VestData, Expense, Caixinha, Goal, MonthlyProjection } from '../types';
 import { VestService } from '../services/VestService';
 
-export const useVest = () => {
-  const [data, setData] = useState<VestData>(() => VestService.getFinancialData());
+const DEFAULT_DATA: VestData = {
+  salary: { salario: 0, diaRecebimento: 5 },
+  expenses: [],
+  caixinhas: [],
+  goals: []
+};
 
-  // Salva no LocalStorage sempre que o estado sofrer mutação
+export const useVest = () => {
+  const [data, setData] = useState<VestData>(DEFAULT_DATA);
+  const [isLoading, setIsLoading] = useState(true);
+
+  // Carrega os dados assincronamente na montagem
   useEffect(() => {
-    VestService.saveFinancialData(data);
-  }, [data]);
+    let isMounted = true;
+    VestService.getFinancialData().then((fetchedData) => {
+      if (isMounted) {
+        setData(fetchedData);
+        setIsLoading(false);
+      }
+    });
+    return () => { isMounted = false; };
+  }, []);
+
+  // Salva no AsyncStorage sempre que o estado sofrer mutação
+  useEffect(() => {
+    if (!isLoading) {
+      VestService.saveFinancialData(data);
+    }
+  }, [data, isLoading]);
 
   // --- Ações de Salário ---
   const updateSalary = (salario: number, diaRecebimento: number) => {
@@ -22,7 +44,7 @@ export const useVest = () => {
   const addExpense = (expense: Omit<Expense, 'id'>) => {
     const newExpense: Expense = {
       ...expense,
-      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
     };
     setData((prev) => ({
       ...prev,
@@ -57,7 +79,7 @@ export const useVest = () => {
   const addCaixinha = (caixinha: Omit<Caixinha, 'id'>) => {
     const newCaixinha: Caixinha = {
       ...caixinha,
-      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
     };
     setData((prev) => ({
       ...prev,
@@ -93,7 +115,7 @@ export const useVest = () => {
   const addGoal = (goal: Omit<Goal, 'id'>) => {
     const newGoal: Goal = {
       ...goal,
-      id: crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+      id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
     };
     setData((prev) => ({
       ...prev,
@@ -116,8 +138,8 @@ export const useVest = () => {
   };
 
   // Reseta todos os dados para o padrão de demonstração
-  const resetToDefault = () => {
-    const freshData = VestService.resetData();
+  const resetToDefault = async () => {
+    const freshData = await VestService.resetData();
     setData(freshData);
   };
 
@@ -370,6 +392,7 @@ export const useVest = () => {
     updateGoal,
     deleteGoal,
     resetToDefault,
+    isLoading,
   };
 };
 export default useVest;

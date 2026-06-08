@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { Pencil, Trash2, AlertTriangle, CheckCircle2, Target, Zap } from 'lucide-react-native';
 import { Goal } from '../types';
+import { useApp } from '../context/AppProvider';
 
 interface GoalCardProps {
   goal: any;
@@ -16,6 +17,18 @@ interface GoalCardProps {
 export const GoalCard: React.FC<GoalCardProps> = ({
   goal, goals, onEdit, onDelete, onOptimize, formatBRL, formatarData,
 }) => {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const textPrimary = isDark ? 'white' : '#0f172a';
+  const textSecondary = isDark ? '#64748b' : '#475569';
+  const innerBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)';
+  const innerBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+  const dividerColor = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)';
+  const barBg = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
   const percentComplete = Math.min(100, Math.round((goal.currentSavedForGoal / goal.valorObjetivo) * 100 || 0));
   const isOnTrack = goal.achievable;
 
@@ -40,8 +53,8 @@ export const GoalCard: React.FC<GoalCardProps> = ({
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <View style={{
-        backgroundColor: '#0f1629',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+        backgroundColor: cardBg,
+        borderWidth: 1, borderColor: cardBorder,
         borderRadius: 22, padding: 20, gap: 16,
       }}>
         {/* Header */}
@@ -57,7 +70,7 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
           <View style={{ flex: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-              <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }} numberOfLines={1}>
+              <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 15 }} numberOfLines={1}>
                 {goal.nome}
               </Text>
               <View style={{
@@ -70,13 +83,13 @@ export const GoalCard: React.FC<GoalCardProps> = ({
               </View>
             </View>
             {goal.descricao ? (
-              <Text style={{ color: '#64748b', fontSize: 12, lineHeight: 16, marginTop: 4 }}>{goal.descricao}</Text>
+              <Text style={{ color: textSecondary, fontSize: 12, lineHeight: 16, marginTop: 4 }}>{goal.descricao}</Text>
             ) : null}
             <Text style={{ color: '#6366f1', fontSize: 10, fontWeight: '700', marginTop: 4 }}>
               📦 {goal.linkedCaixinhaName}
             </Text>
           </View>
-
+ 
           <View style={{ flexDirection: 'row', gap: 6 }}>
             <TouchableOpacity
               onPress={() => { const g = goals.find(g => g.id === goal.id); if (g) onEdit(g); }}
@@ -106,14 +119,14 @@ export const GoalCard: React.FC<GoalCardProps> = ({
         {/* Progress bar */}
         <View style={{ gap: 8 }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
-            <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700' }}>
+            <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700' }}>
               Progresso · {percentComplete}%
             </Text>
-            <Text style={{ color: '#94a3b8', fontSize: 11, fontWeight: '700' }}>
+            <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700' }}>
               {formatBRL(goal.currentSavedForGoal)} / {formatBRL(goal.valorObjetivo)}
             </Text>
           </View>
-          <View style={{ height: 8, backgroundColor: 'rgba(255,255,255,0.06)', borderRadius: 6 }}>
+          <View style={{ height: 8, backgroundColor: barBg, borderRadius: 6 }}>
             <Animated.View style={{
               height: 8, borderRadius: 6,
               backgroundColor: barColor,
@@ -125,19 +138,19 @@ export const GoalCard: React.FC<GoalCardProps> = ({
 
         {/* Info grid */}
         <View style={{
-          backgroundColor: 'rgba(255,255,255,0.03)',
-          borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+          backgroundColor: innerBg,
+          borderWidth: 1, borderColor: innerBorder,
           borderRadius: 14, padding: 14, gap: 10,
         }}>
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#64748b', fontSize: 11 }}>Data Alvo:</Text>
-            <Text style={{ color: '#e2e8f0', fontSize: 11, fontWeight: '700' }}>
+            <Text style={{ color: textSecondary, fontSize: 11 }}>Data Alvo:</Text>
+            <Text style={{ color: textPrimary, fontSize: 11, fontWeight: '700' }}>
               {formatarData(`${goal.dataAlvo}-01`)}
             </Text>
           </View>
-          <View style={{ height: 1, backgroundColor: 'rgba(255,255,255,0.05)' }} />
+          <View style={{ height: 1, backgroundColor: dividerColor }} />
           <View style={{ flexDirection: 'row', justifyContent: 'space-between' }}>
-            <Text style={{ color: '#64748b', fontSize: 11 }}>Previsão Real:</Text>
+            <Text style={{ color: textSecondary, fontSize: 11 }}>Previsão Real:</Text>
             <Text style={{ color: statusColor, fontSize: 11, fontWeight: '800' }}>
               {goal.reachedDateStr === 'N/A'
                 ? 'Sem aportes ativos'

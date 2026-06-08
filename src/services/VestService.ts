@@ -1,4 +1,5 @@
 import { VestData } from '../types';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 const STORAGE_KEY = 'vest_financial_data';
 
@@ -14,14 +15,14 @@ const DEFAULT_DATA: VestData = {
 
 export class VestService {
   /**
-   * Obtém os dados de planejamento financeiro salvos no LocalStorage.
+   * Obtém os dados de planejamento financeiro salvos no AsyncStorage.
    * Se não houver dados, retorna os dados padrão.
    */
-  public static getFinancialData(): VestData {
+  public static async getFinancialData(): Promise<VestData> {
     try {
-      const dataStr = localStorage.getItem(STORAGE_KEY);
+      const dataStr = await AsyncStorage.getItem(STORAGE_KEY);
       if (!dataStr) {
-        this.saveFinancialData(DEFAULT_DATA);
+        await this.saveFinancialData(DEFAULT_DATA);
         return DEFAULT_DATA;
       }
       const parsed: VestData = JSON.parse(dataStr);
@@ -46,32 +47,32 @@ export class VestService {
       }
 
       if (needsSave) {
-        this.saveFinancialData(parsed);
+        await this.saveFinancialData(parsed);
       }
 
       return parsed;
     } catch (error) {
-      console.error('Erro ao ler dados do localStorage:', error);
+      console.error('Erro ao ler dados do AsyncStorage:', error);
       return DEFAULT_DATA;
     }
   }
 
   /**
-   * Salva os dados de planejamento financeiro no LocalStorage.
+   * Salva os dados de planejamento financeiro no AsyncStorage.
    */
-  public static saveFinancialData(data: VestData): void {
+  public static async saveFinancialData(data: VestData): Promise<void> {
     try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(data));
     } catch (error) {
-      console.error('Erro ao salvar dados no localStorage:', error);
+      console.error('Erro ao salvar dados no AsyncStorage:', error);
     }
   }
 
   /**
    * Limpa os dados salvos e reseta para o padrão.
    */
-  public static resetData(): VestData {
-    this.saveFinancialData(DEFAULT_DATA);
+  public static async resetData(): Promise<VestData> {
+    await this.saveFinancialData(DEFAULT_DATA);
     return DEFAULT_DATA;
   }
 }

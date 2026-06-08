@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, ReactNode } from 'react';
+import { View } from 'react-native';
 
 interface AppContextType {
   theme: 'light' | 'dark';
@@ -23,9 +24,9 @@ export const AppProvider: React.FC<{ children: ReactNode }> = ({ children }) => 
 
   return (
     <AppContext.Provider value={{ theme, toggleTheme, user, login, logout }}>
-      <div className={theme === 'dark' ? 'dark text-white bg-slate-900' : 'text-slate-900 bg-white'}>
+      <View style={{ flex: 1, backgroundColor: theme === 'dark' ? '#080b14' : '#f8fafc' }}>
         {children}
-      </div>
+      </View>
     </AppContext.Provider>
   );
 };

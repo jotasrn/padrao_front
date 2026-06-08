@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-native';
 import { TrendingDown, X } from 'lucide-react-native';
 import { Expense } from '../types';
+import { useApp } from '../context/AppProvider';
 
 interface ExpenseFormProps {
   editingExpense: Expense | null;
@@ -19,6 +20,23 @@ const CATEGORY_COLORS: Record<string, string> = {
 };
 
 export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubmit, onCancel }) => {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  const cardBg = isDark ? '#131b2e' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(99,102,241,0.2)' : 'rgba(99,102,241,0.35)';
+  const textPrimary = isDark ? 'white' : '#0f172a';
+  const textSecondary = isDark ? '#64748b' : '#475569';
+  const inputBg = isDark ? 'rgba(255,255,255,0.04)' : 'rgba(0,0,0,0.03)';
+  const inputBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const headerBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+  const closeBtnBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+  const btnSecondaryBg = isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.04)';
+  const btnSecondaryBorder = isDark ? 'rgba(255,255,255,0.08)' : 'rgba(0,0,0,0.08)';
+  const placeholderColor = isDark ? '#334155' : '#94a3b8';
+  const parcelasBg = isDark ? 'rgba(245,158,11,0.06)' : 'rgba(245,158,11,0.04)';
+  const parcelasBorder = isDark ? 'rgba(245,158,11,0.2)' : 'rgba(245,158,11,0.25)';
+
   const [expDesc, setExpDesc] = useState('');
   const [expVal,  setExpVal]  = useState('');
   const [expCat,  setExpCat]  = useState<Expense['categoria']>('Moradia');
@@ -56,10 +74,47 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
     });
   };
 
+  const formCardStyle = {
+    backgroundColor: cardBg,
+    borderWidth: 1, borderColor: cardBorder,
+    borderRadius: 22, padding: 20, gap: 16,
+    shadowColor: '#6366f1', shadowOpacity: isDark ? 0.15 : 0.05, shadowRadius: 20,
+  };
+  const formHeaderStyle = {
+    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
+    borderBottomWidth: 1, borderBottomColor: headerBorder, paddingBottom: 14,
+  };
+  const formTitleStyle = { color: textPrimary, fontWeight: '800', fontSize: 15 };
+  const closeBtnStyle = {
+    width: 30, height: 30, borderRadius: 8,
+    backgroundColor: closeBtnBg,
+    alignItems: 'center', justifyContent: 'center',
+  };
+  const fieldLabelStyle = {
+    color: textSecondary, fontSize: 10, fontWeight: '700',
+    letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8,
+  };
+  const inputStyle = {
+    backgroundColor: inputBg,
+    borderWidth: 1, borderColor: inputBorder,
+    borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
+    color: textPrimary, fontSize: 14, fontWeight: '500',
+  };
+  const btnSecondaryStyle = {
+    flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+    backgroundColor: btnSecondaryBg,
+    borderWidth: 1, borderColor: btnSecondaryBorder,
+  };
+  const btnPrimaryStyle = {
+    flex: 2, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
+    backgroundColor: '#6366f1',
+    shadowColor: '#6366f1', shadowOpacity: 0.5, shadowRadius: 10,
+  };
+
   return (
-    <View style={formCard}>
+    <View style={formCardStyle as any}>
       {/* Header */}
-      <View style={formHeader}>
+      <View style={formHeaderStyle as any}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <View style={{
             width: 30, height: 30, borderRadius: 9,
@@ -69,37 +124,37 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
           }}>
             <TrendingDown size={14} color="#f87171" />
           </View>
-          <Text style={formTitle}>{editingExpense ? 'Editar Gasto' : 'Novo Gasto'}</Text>
+          <Text style={formTitleStyle}>{editingExpense ? 'Editar Gasto' : 'Novo Gasto'}</Text>
         </View>
-        <TouchableOpacity onPress={onCancel} style={closeBtn}>
-          <X size={15} color="#64748b" />
+        <TouchableOpacity onPress={onCancel} style={closeBtnStyle}>
+          <X size={15} color={textSecondary} />
         </TouchableOpacity>
       </View>
 
       <View style={{ gap: 14 }}>
         {/* Descrição */}
         <View>
-          <Text style={fieldLabel}>Descrição</Text>
+          <Text style={fieldLabelStyle}>Descrição</Text>
           <TextInput
             value={expDesc} onChangeText={setExpDesc}
-            placeholder="Ex: Conta de Luz, Netflix..." placeholderTextColor="#334155"
-            style={input}
+            placeholder="Ex: Conta de Luz, Netflix..." placeholderTextColor={placeholderColor}
+            style={inputStyle as any}
           />
         </View>
 
         {/* Valor */}
         <View>
-          <Text style={fieldLabel}>Valor (R$)</Text>
+          <Text style={fieldLabelStyle}>Valor (R$)</Text>
           <TextInput
             value={expVal} onChangeText={setExpVal}
-            keyboardType="numeric" placeholder="0,00" placeholderTextColor="#334155"
-            style={input}
+            keyboardType="numeric" placeholder="0,00" placeholderTextColor={placeholderColor}
+            style={inputStyle as any}
           />
         </View>
 
         {/* Categoria */}
         <View>
-          <Text style={fieldLabel}>Categoria</Text>
+          <Text style={fieldLabelStyle}>Categoria</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 4, paddingVertical: 2 }}>
               {categories.map((c) => {
@@ -110,11 +165,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
                     key={c} onPress={() => setExpCat(c)}
                     style={{
                       paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10,
-                      backgroundColor: isActive ? `${color}20` : 'rgba(255,255,255,0.04)',
-                      borderWidth: 1, borderColor: isActive ? `${color}60` : 'rgba(255,255,255,0.08)',
+                      backgroundColor: isActive ? `${color}20` : inputBg,
+                      borderWidth: 1, borderColor: isActive ? `${color}60` : inputBorder,
                     }}
                   >
-                    <Text style={{ color: isActive ? color : '#475569', fontSize: 12, fontWeight: '700' }}>{c}</Text>
+                    <Text style={{ color: isActive ? color : textSecondary, fontSize: 12, fontWeight: '700' }}>{c}</Text>
                   </TouchableOpacity>
                 );
               })}
@@ -124,17 +179,17 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
 
         {/* Dia vencimento */}
         <View>
-          <Text style={fieldLabel}>Dia de Vencimento</Text>
+          <Text style={fieldLabelStyle}>Dia de Vencimento</Text>
           <TextInput
             value={expDay} onChangeText={setExpDay}
-            keyboardType="numeric" placeholderTextColor="#334155"
-            style={input}
+            keyboardType="numeric" placeholderTextColor={placeholderColor}
+            style={inputStyle as any}
           />
         </View>
 
         {/* Tipo */}
         <View>
-          <Text style={fieldLabel}>Frequência</Text>
+          <Text style={fieldLabelStyle}>Frequência</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {types.map((t) => {
               const isActive = expTipo === t;
@@ -143,11 +198,11 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
                   key={t} onPress={() => setExpTipo(t)}
                   style={{
                     flex: 1, paddingVertical: 9, borderRadius: 10, alignItems: 'center',
-                    backgroundColor: isActive ? 'rgba(99,102,241,0.15)' : 'rgba(255,255,255,0.04)',
-                    borderWidth: 1, borderColor: isActive ? 'rgba(99,102,241,0.4)' : 'rgba(255,255,255,0.08)',
+                    backgroundColor: isActive ? 'rgba(99,102,241,0.15)' : inputBg,
+                    borderWidth: 1, borderColor: isActive ? 'rgba(99,102,241,0.4)' : inputBorder,
                   }}
                 >
-                  <Text style={{ color: isActive ? '#818cf8' : '#475569', fontSize: 12, fontWeight: '700' }}>{t}</Text>
+                  <Text style={{ color: isActive ? '#818cf8' : textSecondary, fontSize: 12, fontWeight: '700' }}>{t}</Text>
                 </TouchableOpacity>
               );
             })}
@@ -157,22 +212,22 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
         {/* Parcelas */}
         {expTipo === 'Parcelada' && (
           <View style={{
-            backgroundColor: 'rgba(245,158,11,0.06)',
-            borderWidth: 1, borderColor: 'rgba(245,158,11,0.2)',
+            backgroundColor: parcelasBg,
+            borderWidth: 1, borderColor: parcelasBorder,
             borderRadius: 14, padding: 14, flexDirection: 'row', gap: 12,
           }}>
             <View style={{ flex: 1 }}>
-              <Text style={fieldLabel}>Total Parcelas</Text>
+              <Text style={fieldLabelStyle}>Total Parcelas</Text>
               <TextInput
                 value={expParcelasTotais} onChangeText={setExpParcelasTotais}
-                keyboardType="numeric" style={input}
+                keyboardType="numeric" style={inputStyle as any}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={fieldLabel}>Parcela Atual</Text>
+              <Text style={fieldLabelStyle}>Parcela Atual</Text>
               <TextInput
                 value={expParcelaAtual} onChangeText={setExpParcelaAtual}
-                keyboardType="numeric" style={input}
+                keyboardType="numeric" style={inputStyle as any}
               />
             </View>
           </View>
@@ -181,10 +236,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
 
       {/* Footer */}
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-        <TouchableOpacity onPress={onCancel} style={btnSecondary}>
-          <Text style={{ color: '#64748b', fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
+        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle}>
+          <Text style={{ color: textSecondary, fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSubmit} style={btnPrimary}>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle}>
           <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
             {editingExpense ? 'Salvar Alterações' : 'Salvar Gasto'}
           </Text>
@@ -192,42 +247,4 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
       </View>
     </View>
   );
-};
-
-// Shared styles
-const formCard: any = {
-  backgroundColor: '#131b2e',
-  borderWidth: 1, borderColor: 'rgba(99,102,241,0.2)',
-  borderRadius: 22, padding: 20, gap: 16,
-  shadowColor: '#6366f1', shadowOpacity: 0.15, shadowRadius: 20,
-};
-const formHeader: any = {
-  flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-  borderBottomWidth: 1, borderBottomColor: 'rgba(255,255,255,0.06)', paddingBottom: 14,
-};
-const formTitle: any = { color: 'white', fontWeight: '800', fontSize: 15 };
-const closeBtn: any = {
-  width: 30, height: 30, borderRadius: 8,
-  backgroundColor: 'rgba(255,255,255,0.05)',
-  alignItems: 'center', justifyContent: 'center',
-};
-const fieldLabel: any = {
-  color: '#64748b', fontSize: 10, fontWeight: '700',
-  letterSpacing: 0.6, textTransform: 'uppercase', marginBottom: 8,
-};
-const input: any = {
-  backgroundColor: 'rgba(255,255,255,0.04)',
-  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-  borderRadius: 12, paddingHorizontal: 14, paddingVertical: 11,
-  color: 'white', fontSize: 14, fontWeight: '500',
-};
-const btnSecondary: any = {
-  flex: 1, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
-  backgroundColor: 'rgba(255,255,255,0.05)',
-  borderWidth: 1, borderColor: 'rgba(255,255,255,0.08)',
-};
-const btnPrimary: any = {
-  flex: 2, paddingVertical: 12, borderRadius: 12, alignItems: 'center',
-  backgroundColor: '#6366f1',
-  shadowColor: '#6366f1', shadowOpacity: 0.5, shadowRadius: 10,
 };

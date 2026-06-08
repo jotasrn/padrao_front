@@ -2,6 +2,7 @@ import React, { useRef, useEffect } from 'react';
 import { View, Text, TouchableOpacity, Animated } from 'react-native';
 import { PiggyBank, Pencil, Trash2, TrendingUp } from 'lucide-react-native';
 import { Caixinha } from '../types';
+import { useApp } from '../context/AppProvider';
 
 interface CaixinhaCardProps {
   cx: Caixinha;
@@ -19,6 +20,22 @@ function getAccent(id: string) {
 }
 
 export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit, formatBRL }) => {
+  const { theme } = useApp();
+  const isDark = theme === 'dark';
+
+  const cardBg = isDark ? '#0f1629' : '#ffffff';
+  const cardBorder = isDark ? 'rgba(255,255,255,0.07)' : 'rgba(0,0,0,0.06)';
+  const textPrimary = isDark ? 'white' : '#0f172a';
+  const textSecondary = isDark ? '#64748b' : '#475569';
+  const innerBg = isDark ? 'rgba(255,255,255,0.03)' : 'rgba(0,0,0,0.02)';
+  const innerBorder = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.05)';
+  const dividerColor = isDark ? 'rgba(255,255,255,0.06)' : 'rgba(0,0,0,0.06)';
+
+  const miniLabelStyle = {
+    color: textSecondary, fontSize: 9, fontWeight: '700',
+    letterSpacing: 0.8, textTransform: 'uppercase',
+  };
+
   const CDI_ANUAL = 10.75;
   const cdiPct = cx.rendimentoCdiPct !== undefined && !isNaN(cx.rendimentoCdiPct) ? cx.rendimentoCdiPct : 100;
   const rendimentoAnualCdi = (cdiPct / 100) * (CDI_ANUAL / 100);
@@ -40,14 +57,11 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
     ]).start();
   }, []);
 
-  // Growth progress bar (percentage towards 12-month goal vs current)
-  const growthPct = cx.valorAtual > 0 ? Math.min(100, (cx.valorAtual / balance12) * 100) : 0;
-
   return (
     <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
       <View style={{
-        backgroundColor: '#0f1629',
-        borderWidth: 1, borderColor: 'rgba(255,255,255,0.07)',
+        backgroundColor: cardBg,
+        borderWidth: 1, borderColor: cardBorder,
         borderRadius: 22, overflow: 'hidden',
       }}>
         {/* Accent stripe */}
@@ -66,7 +80,7 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
                 <PiggyBank size={20} color={accent} />
               </View>
               <View style={{ flex: 1 }}>
-                <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }} numberOfLines={1}>
+                <Text style={{ color: textPrimary, fontWeight: '800', fontSize: 15 }} numberOfLines={1}>
                   {cx.nome}
                 </Text>
                 <Text style={{ color: accent, fontSize: 10, fontWeight: '700', marginTop: 2 }}>
@@ -104,19 +118,19 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
           {/* Values row */}
           <View style={{
             flexDirection: 'row', gap: 10,
-            backgroundColor: 'rgba(255,255,255,0.03)',
-            borderWidth: 1, borderColor: 'rgba(255,255,255,0.06)',
+            backgroundColor: innerBg,
+            borderWidth: 1, borderColor: innerBorder,
             borderRadius: 14, padding: 14,
           }}>
             <View style={{ flex: 1 }}>
-              <Text style={miniLabel}>Acumulado</Text>
-              <Text style={{ color: 'white', fontWeight: '900', fontSize: 17, marginTop: 4 }}>
+              <Text style={miniLabelStyle as any}>Acumulado</Text>
+              <Text style={{ color: textPrimary, fontWeight: '900', fontSize: 17, marginTop: 4 }}>
                 {formatBRL(cx.valorAtual)}
               </Text>
             </View>
-            <View style={{ width: 1, backgroundColor: 'rgba(255,255,255,0.06)' }} />
+            <View style={{ width: 1, backgroundColor: dividerColor }} />
             <View style={{ flex: 1, alignItems: 'flex-end' }}>
-              <Text style={miniLabel}>Aporte/mês</Text>
+              <Text style={miniLabelStyle as any}>Aporte/mês</Text>
               <Text style={{ color: '#10b981', fontWeight: '900', fontSize: 17, marginTop: 4 }}>
                 {formatBRL(cx.aporteMensal)}
               </Text>
@@ -126,8 +140,8 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
           {/* Projections */}
           <View style={{ gap: 10 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
-              <TrendingUp size={12} color="#64748b" />
-              <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
+              <TrendingUp size={12} color={textSecondary} />
+              <Text style={{ color: textSecondary, fontSize: 9, fontWeight: '800', letterSpacing: 1, textTransform: 'uppercase' }}>
                 Simulação de Crescimento
               </Text>
             </View>
@@ -139,7 +153,7 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
                 borderWidth: 1, borderColor: `${accent}20`,
                 borderRadius: 12, padding: 12, gap: 4,
               }}>
-                <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>6 meses</Text>
+                <Text style={{ color: textSecondary, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>6 meses</Text>
                 <Text style={{ color: accent, fontWeight: '800', fontSize: 14 }}>{formatBRL(balance6)}</Text>
               </View>
               <View style={{
@@ -148,7 +162,7 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
                 borderWidth: 1, borderColor: `${accent}30`,
                 borderRadius: 12, padding: 12, gap: 4,
               }}>
-                <Text style={{ color: '#64748b', fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>12 meses</Text>
+                <Text style={{ color: textSecondary, fontSize: 9, fontWeight: '700', textTransform: 'uppercase' }}>12 meses</Text>
                 <Text style={{ color: accent, fontWeight: '800', fontSize: 14 }}>{formatBRL(balance12)}</Text>
               </View>
             </View>
@@ -157,9 +171,4 @@ export const CaixinhaCard: React.FC<CaixinhaCardProps> = ({ cx, onDelete, onEdit
       </View>
     </Animated.View>
   );
-};
-
-const miniLabel: any = {
-  color: '#475569', fontSize: 9, fontWeight: '700',
-  letterSpacing: 0.8, textTransform: 'uppercase',
 };
