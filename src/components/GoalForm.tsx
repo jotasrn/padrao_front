@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { Target, X, Check } from 'lucide-react-native';
 import { Goal, Caixinha } from '../types';
 import { useApp } from '../context/AppProvider';
+import { aplicarMascaraMoeda, formatarMoeda, desformatarMoeda } from '../utils/formatters';
 
 interface GoalFormProps {
   caixinhas: Caixinha[];
@@ -45,10 +46,10 @@ export const GoalForm: React.FC<GoalFormProps> = ({
   useEffect(() => {
     if (editingGoal) {
       setGNome(editingGoal.nome);
-      setGValor(editingGoal.valorObjetivo.toString());
+      setGValor(formatarMoeda(editingGoal.valorObjetivo));
       setGData(editingGoal.dataAlvo);
       setGCaixinhaIds(editingGoal.caixinhaVinculadaIds || []);
-      setGAporteSalarioDireto(editingGoal.aporteSalarioDireto?.toString() || '');
+      setGAporteSalarioDireto(formatarMoeda(editingGoal.aporteSalarioDireto || 0));
       setGDesc(editingGoal.descricao || '');
     } else {
       setGNome(''); setGValor(''); setGData('2026-12');
@@ -59,9 +60,9 @@ export const GoalForm: React.FC<GoalFormProps> = ({
   const handleSubmit = () => {
     if (!gNome || !gValor || !gData) return;
     onSubmit({
-      nome: gNome, valorObjetivo: parseFloat(gValor) || 0,
+      nome: gNome, valorObjetivo: desformatarMoeda(gValor),
       dataAlvo: gData, caixinhaVinculadaIds: gCaixinhaIds,
-      aporteSalarioDireto: parseFloat(gAporteSalarioDireto) || 0,
+      aporteSalarioDireto: desformatarMoeda(gAporteSalarioDireto),
       descricao: gDesc,
     });
   };
@@ -119,16 +120,16 @@ export const GoalForm: React.FC<GoalFormProps> = ({
           }}>
             <Target size={14} color="#fb923c" />
           </View>
-          <Text style={formTitleStyle}>{editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}</Text>
+          <Text style={formTitleStyle as any}>{editingGoal ? 'Editar Objetivo' : 'Novo Objetivo'}</Text>
         </View>
-        <TouchableOpacity onPress={onCancel} style={closeBtnStyle}>
+        <TouchableOpacity onPress={onCancel} style={closeBtnStyle as any}>
           <X size={15} color={textSecondary} />
         </TouchableOpacity>
       </View>
 
       <View style={{ gap: 14 }}>
         <View>
-          <Text style={fieldLabelStyle}>Nome do Objetivo</Text>
+          <Text style={fieldLabelStyle as any}>Nome do Objetivo</Text>
           <TextInput
             value={gNome} onChangeText={setGNome}
             placeholder="Ex: Comprar Notebook..." placeholderTextColor={placeholderColor}
@@ -138,15 +139,15 @@ export const GoalForm: React.FC<GoalFormProps> = ({
 
         <View style={{ flexDirection: 'row', gap: 10 }}>
           <View style={{ flex: 1 }}>
-            <Text style={fieldLabelStyle}>Valor da Meta (R$)</Text>
+            <Text style={fieldLabelStyle as any}>Valor da Meta (R$)</Text>
             <TextInput
-              value={gValor} onChangeText={setGValor}
+              value={gValor} onChangeText={(text) => setGValor(aplicarMascaraMoeda(text))}
               keyboardType="numeric" placeholder="0,00" placeholderTextColor={placeholderColor}
               style={inputStyle as any}
             />
           </View>
           <View style={{ flex: 1 }}>
-            <Text style={fieldLabelStyle}>Mês Alvo</Text>
+            <Text style={fieldLabelStyle as any}>Mês Alvo</Text>
             <TextInput
               value={gData} onChangeText={setGData}
               placeholder="YYYY-MM" placeholderTextColor={placeholderColor}
@@ -156,9 +157,9 @@ export const GoalForm: React.FC<GoalFormProps> = ({
         </View>
 
         <View>
-          <Text style={fieldLabelStyle}>Aporte Direto do Salário (R$)</Text>
+          <Text style={fieldLabelStyle as any}>Aporte Direto do Salário (R$)</Text>
           <TextInput
-            value={gAporteSalarioDireto} onChangeText={setGAporteSalarioDireto}
+            value={gAporteSalarioDireto} onChangeText={(text) => setGAporteSalarioDireto(aplicarMascaraMoeda(text))}
             keyboardType="numeric" placeholder="0,00 (além das caixinhas)" placeholderTextColor={placeholderColor}
             style={inputStyle as any}
           />
@@ -166,7 +167,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({
 
         {/* Caixinhas selector */}
         <View>
-          <Text style={fieldLabelStyle}>Vincular Caixinhas</Text>
+          <Text style={fieldLabelStyle as any}>Vincular Caixinhas</Text>
           {caixinhas.length === 0 ? (
             <View style={{
               backgroundColor: 'rgba(245,158,11,0.06)',
@@ -216,7 +217,7 @@ export const GoalForm: React.FC<GoalFormProps> = ({
         </View>
 
         <View>
-          <Text style={fieldLabelStyle}>Descrição (opcional)</Text>
+          <Text style={fieldLabelStyle as any}>Descrição (opcional)</Text>
           <TextInput
             value={gDesc} onChangeText={setGDesc}
             placeholder="Uma nota para se motivar..." placeholderTextColor={placeholderColor}
@@ -227,10 +228,10 @@ export const GoalForm: React.FC<GoalFormProps> = ({
 
       {/* Footer */}
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle}>
+        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle as any}>
           <Text style={{ color: textSecondary, fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle}>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle as any}>
           <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
             {editingGoal ? 'Salvar Alterações' : 'Salvar Objetivo'}
           </Text>

@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity } from 'react-native';
 import {
-  TrendingDown, Pencil, Trash2, Plus, Check,
+  TrendingDown, Pencil, Trash2, Plus, Check, Square, CheckSquare,
   Home, Utensils, Car, HeartPulse, GraduationCap, Grid
 } from 'lucide-react-native';
 import { Expense, Aggregates } from '../types';
@@ -196,26 +196,30 @@ export const ExpenseList: React.FC<ExpenseListProps> = ({
                   borderTopWidth: 1, borderTopColor: lineSeparator, paddingTop: 10,
                 }}>
                   <Text style={{ color: textSecondary, fontSize: 10, fontWeight: '600' }}>
-                    Vence dia {exp.diaVencimento}
+                    Vence dia {exp.vencimento}
                   </Text>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
                     {/* Paid toggle */}
                     <TouchableOpacity
                       onPress={() => toggleExpensePaid(exp.id)}
                       style={{
-                        flexDirection: 'row', alignItems: 'center', gap: 4,
+                        flexDirection: 'row', alignItems: 'center', gap: 6,
                         paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8,
-                        backgroundColor: isPaid ? 'rgba(16,185,129,0.1)' : 'rgba(244,63,94,0.1)',
+                        backgroundColor: isPaid ? 'rgba(16,185,129,0.1)' : 'rgba(255,255,255,0.05)',
                         borderWidth: 1,
-                        borderColor: isPaid ? 'rgba(16,185,129,0.3)' : 'rgba(244,63,94,0.3)',
+                        borderColor: isPaid ? 'rgba(16,185,129,0.3)' : itemBorder,
                       }}
                     >
-                      {isPaid && <Check size={10} color="#10b981" />}
+                      {isPaid ? (
+                        <CheckSquare size={12} color="#10b981" />
+                      ) : (
+                        <Square size={12} color={textSecondary} />
+                      )}
                       <Text style={{
                         fontSize: 10, fontWeight: '800',
-                        color: isPaid ? '#10b981' : '#f43f5e',
+                        color: isPaid ? '#10b981' : textSecondary,
                       }}>
-                        {isPaid ? 'Pago' : 'Pendente'}
+                        {isPaid ? 'Pago' : 'Marcar Pago'}
                       </Text>
                     </TouchableOpacity>
 

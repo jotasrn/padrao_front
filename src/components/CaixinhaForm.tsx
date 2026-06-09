@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity } from 'react-native';
 import { PiggyBank, X } from 'lucide-react-native';
 import { Caixinha } from '../types';
 import { useApp } from '../context/AppProvider';
+import { aplicarMascaraMoeda, formatarMoeda, desformatarMoeda } from '../utils/formatters';
 
 interface CaixinhaFormProps {
   editingCaixinha: Caixinha | null;
@@ -36,8 +37,8 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({ editingCaixinha, onS
   useEffect(() => {
     if (editingCaixinha) {
       setCxNome(editingCaixinha.nome);
-      setCxValor(editingCaixinha.valorAtual.toString());
-      setCxAporte(editingCaixinha.aporteMensal.toString());
+      setCxValor(formatarMoeda(editingCaixinha.valorAtual));
+      setCxAporte(formatarMoeda(editingCaixinha.aporteMensal));
       setCxRendimento(editingCaixinha.rendimentoCdiPct?.toString() || '100');
     } else {
       setCxNome(''); setCxValor(''); setCxAporte(''); setCxRendimento('100');
@@ -48,8 +49,8 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({ editingCaixinha, onS
     if (!cxNome || !cxValor || !cxAporte) return;
     onSubmit({
       nome: cxNome,
-      valorAtual: parseFloat(cxValor) || 0,
-      aporteMensal: parseFloat(cxAporte) || 0,
+      valorAtual: desformatarMoeda(cxValor),
+      aporteMensal: desformatarMoeda(cxAporte),
       rendimentoCdiPct: parseFloat(cxRendimento) || 100,
     });
   };
@@ -106,16 +107,16 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({ editingCaixinha, onS
           }}>
             <PiggyBank size={14} color="#34d399" />
           </View>
-          <Text style={formTitleStyle}>{editingCaixinha ? 'Editar Caixinha' : 'Nova Caixinha'}</Text>
+          <Text style={formTitleStyle as any}>{editingCaixinha ? 'Editar Caixinha' : 'Nova Caixinha'}</Text>
         </View>
-        <TouchableOpacity onPress={onCancel} style={closeBtnStyle}>
+        <TouchableOpacity onPress={onCancel} style={closeBtnStyle as any}>
           <X size={15} color={textSecondary} />
         </TouchableOpacity>
       </View>
 
       <View style={{ gap: 14 }}>
         <View>
-          <Text style={fieldLabelStyle}>{fieldLabelStyle.letterSpacing ? 'Nome da Caixinha' : 'Nome'}</Text>
+          <Text style={fieldLabelStyle as any}>{fieldLabelStyle.letterSpacing ? 'Nome da Caixinha' : 'Nome'}</Text>
           <TextInput
             value={cxNome} onChangeText={setCxNome}
             placeholder="Ex: Emergência, Viagem..." placeholderTextColor={placeholderColor}
@@ -124,25 +125,25 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({ editingCaixinha, onS
         </View>
 
         <View>
-          <Text style={fieldLabelStyle}>Valor Acumulado Inicial (R$)</Text>
+          <Text style={fieldLabelStyle as any}>Valor Acumulado Inicial (R$)</Text>
           <TextInput
-            value={cxValor} onChangeText={setCxValor}
+            value={cxValor} onChangeText={(text) => setCxValor(aplicarMascaraMoeda(text))}
             keyboardType="numeric" placeholder="0,00" placeholderTextColor={placeholderColor}
             style={inputStyle as any}
           />
         </View>
 
         <View>
-          <Text style={fieldLabelStyle}>Aporte Mensal (R$)</Text>
+          <Text style={fieldLabelStyle as any}>Aporte Mensal (R$)</Text>
           <TextInput
-            value={cxAporte} onChangeText={setCxAporte}
-            keyboardType="numeric" placeholder="Ex: 200" placeholderTextColor={placeholderColor}
+            value={cxAporte} onChangeText={(text) => setCxAporte(aplicarMascaraMoeda(text))}
+            keyboardType="numeric" placeholder="Ex: 200,00" placeholderTextColor={placeholderColor}
             style={inputStyle as any}
           />
         </View>
 
         <View>
-          <Text style={fieldLabelStyle}>Rendimento (% do CDI)</Text>
+          <Text style={fieldLabelStyle as any}>Rendimento (% do CDI)</Text>
           <TextInput
             value={cxRendimento} onChangeText={setCxRendimento}
             keyboardType="numeric" placeholder="100" placeholderTextColor={placeholderColor}
@@ -165,10 +166,10 @@ export const CaixinhaForm: React.FC<CaixinhaFormProps> = ({ editingCaixinha, onS
 
       {/* Footer */}
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle}>
+        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle as any}>
           <Text style={{ color: textSecondary, fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle}>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle as any}>
           <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
             {editingCaixinha ? 'Salvar Alterações' : 'Criar Caixinha'}
           </Text>

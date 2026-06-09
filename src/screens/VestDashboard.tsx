@@ -7,7 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import Svg, { Circle, G } from 'react-native-svg';
 import {
   TrendingUp, TrendingDown, Plus, Trash2, PiggyBank,
-  Target, Sparkles, PieChart, CalendarDays, RotateCcw, Download, Eye, EyeOff
+  Target, Sparkles, PieChart, CalendarDays, RotateCcw, Download, Eye, EyeOff, Sun, Moon
 } from 'lucide-react-native';
 import { useVest } from '../hooks/useVest';
 import { useAuthStore } from '../store/useAuthStore';
@@ -96,15 +96,15 @@ export default function VestDashboard() {
       csv += `Receita,Salário Mensal,${salary.salario},Recebido no dia ${salary.diaRecebimento},\n`;
       
       expenses.forEach(exp => {
-        csv += `Despesa,${exp.descricao.replace(/,/g, ' ')},${exp.valor},${exp.pago ? 'Pago' : 'Pendente'},Vence dia ${exp.diaVencimento}\n`;
+        csv += `Despesa,${exp.descricao.replace(/,/g, ' ')},${exp.valor},${exp.pago ? 'Pago' : 'Pendente'},Vence dia ${exp.vencimento}\n`;
       });
       
       caixinhas.forEach(cx => {
-        csv += `Caixinha,${cx.nome.replace(/,/g, ' ')},${cx.saldo},Aporte ${cx.aporteMensal},Rendimento ${cx.taxaRendimento}%/ano\n`;
+        csv += `Caixinha,${cx.nome.replace(/,/g, ' ')},${cx.valorAtual},Aporte ${cx.aporteMensal},Rendimento ${cx.rendimentoCdiPct}% CDI\n`;
       });
       
       goals.forEach(g => {
-        csv += `Meta,${g.nome.replace(/,/g, ' ')},${g.valorObjetivo},Prazo ${g.prazoMeses} meses,\n`;
+        csv += `Meta,${g.nome.replace(/,/g, ' ')},${g.valorObjetivo},Alvo em ${g.dataAlvo},\n`;
       });
 
       await Share.share({
@@ -141,7 +141,7 @@ export default function VestDashboard() {
       id: '',
       descricao: description,
       valor: parsedValue,
-      diaVencimento: new Date().getDate(),
+      vencimento: new Date().getDate(),
       pago: false
     } as any);
     setShowAddExpense(true);
@@ -149,7 +149,7 @@ export default function VestDashboard() {
 
   const handleExpenseSubmit = (data: any) => {
     if (editingExpense) { updateExpense({ ...editingExpense, ...data }); setEditingExpense(null); }
-    else addExpense({ ...data, pago: false });
+    else addExpense({ ...data });
     setShowAddExpense(false);
   };
 
@@ -190,6 +190,17 @@ export default function VestDashboard() {
     } catch (error) {
       Alert.alert('Erro', 'Não foi possível exportar os dados');
     }
+  };
+
+  const handleResetConfirm = () => {
+    Alert.alert(
+      'Confirmar Reset',
+      'Tem certeza de que deseja apagar todos os seus dados? Esta ação não pode ser desfeita.',
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sim, Apagar Tudo', style: 'destructive', onPress: resetToDefault }
+      ]
+    );
   };
 
   const fabOpacity = fabGlow.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
@@ -268,7 +279,7 @@ export default function VestDashboard() {
             <Download size={15} color="#38bdf8" />
           </TouchableOpacity>
           <TouchableOpacity
-            onPress={resetToDefault}
+            onPress={handleResetConfirm}
             style={{
               width: 36, height: 36, borderRadius: 10,
               backgroundColor: 'rgba(244,63,94,0.1)',

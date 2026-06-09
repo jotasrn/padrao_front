@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, Animated } from 'react-native'
 import { DollarSign, Check, X, Edit3 } from 'lucide-react-native';
 import { Salary, Aggregates } from '../types';
 import { useApp } from '../context/AppProvider';
+import { aplicarMascaraMoeda, formatarMoeda, desformatarMoeda } from '../utils/formatters';
 
 interface SalarySectionProps {
   salary: Salary;
@@ -15,7 +16,7 @@ export const SalarySection: React.FC<SalarySectionProps> = ({
   salary, aggregates, updateSalary, formatBRL,
 }) => {
   const [editingSalary, setEditingSalary] = useState(false);
-  const [newSalaryVal, setNewSalaryVal] = useState(salary.salario.toString());
+  const [newSalaryVal, setNewSalaryVal] = useState(formatarMoeda(salary.salario));
   const [newSalaryDay, setNewSalaryDay] = useState(salary.diaRecebimento.toString());
 
   const { theme } = useApp();
@@ -39,7 +40,7 @@ export const SalarySection: React.FC<SalarySectionProps> = ({
   }, []);
 
   const handleSaveSalary = () => {
-    updateSalary(parseFloat(newSalaryVal) || 0, parseInt(newSalaryDay) || 5);
+    updateSalary(desformatarMoeda(newSalaryVal), parseInt(newSalaryDay) || 5);
     setEditingSalary(false);
   };
 
@@ -89,7 +90,7 @@ export const SalarySection: React.FC<SalarySectionProps> = ({
                   <Text style={labelStyleDynamic as any}>Salário (R$)</Text>
                   <TextInput
                     value={newSalaryVal}
-                    onChangeText={setNewSalaryVal}
+                    onChangeText={(text) => setNewSalaryVal(aplicarMascaraMoeda(text))}
                     keyboardType="numeric"
                     style={inputStyleDynamic as any}
                     placeholderTextColor={textSecondary}
@@ -138,7 +139,7 @@ export const SalarySection: React.FC<SalarySectionProps> = ({
                 </Text>
                 <TouchableOpacity
                   onPress={() => {
-                    setNewSalaryVal(salary.salario.toString());
+                    setNewSalaryVal(formatarMoeda(salary.salario));
                     setNewSalaryDay(salary.diaRecebimento.toString());
                     setEditingSalary(true);
                   }}

@@ -3,6 +3,7 @@ import { View, Text, TextInput, TouchableOpacity, ScrollView } from 'react-nativ
 import { TrendingDown, X } from 'lucide-react-native';
 import { Expense } from '../types';
 import { useApp } from '../context/AppProvider';
+import { aplicarMascaraMoeda, formatarMoeda, desformatarMoeda } from '../utils/formatters';
 
 interface ExpenseFormProps {
   editingExpense: Expense | null;
@@ -10,6 +11,7 @@ interface ExpenseFormProps {
     descricao: string; valor: number; categoria: Expense['categoria'];
     vencimento: number; tipo: Expense['tipo'];
     parcelasTotais?: number; parcelaAtual?: number;
+    pago: boolean;
   }) => void;
   onCancel: () => void;
 }
@@ -44,6 +46,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
   const [expTipo, setExpTipo] = useState<Expense['tipo']>('Recorrente');
   const [expParcelasTotais, setExpParcelasTotais] = useState('12');
   const [expParcelaAtual,   setExpParcelaAtual]   = useState('1');
+  const [expPago, setExpPago] = useState(false);
 
   const categories: Expense['categoria'][] = ['Moradia', 'Alimentação', 'Transporte', 'Saúde', 'Educação', 'Outros'];
   const types: Expense['tipo'][] = ['Recorrente', 'Única', 'Parcelada'];
@@ -51,26 +54,29 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
   useEffect(() => {
     if (editingExpense) {
       setExpDesc(editingExpense.descricao);
-      setExpVal(editingExpense.valor.toString());
+      setExpVal(formatarMoeda(editingExpense.valor));
       setExpCat(editingExpense.categoria);
       setExpDay(editingExpense.vencimento.toString());
       setExpTipo(editingExpense.tipo || 'Recorrente');
       setExpParcelasTotais(editingExpense.parcelasTotais?.toString() || '12');
       setExpParcelaAtual(editingExpense.parcelaAtual?.toString() || '1');
+      setExpPago(editingExpense.pago || false);
     } else {
       setExpDesc(''); setExpVal(''); setExpCat('Moradia');
       setExpDay('5'); setExpTipo('Recorrente');
       setExpParcelasTotais('12'); setExpParcelaAtual('1');
+      setExpPago(false);
     }
   }, [editingExpense]);
 
   const handleSubmit = () => {
     if (!expDesc || !expVal) return;
     onSubmit({
-      descricao: expDesc, valor: parseFloat(expVal) || 0,
+      descricao: expDesc, valor: desformatarMoeda(expVal),
       categoria: expCat, vencimento: parseInt(expDay) || 5, tipo: expTipo,
       parcelasTotais: expTipo === 'Parcelada' ? parseInt(expParcelasTotais) || 12 : undefined,
       parcelaAtual:   expTipo === 'Parcelada' ? parseInt(expParcelaAtual)   || 1  : undefined,
+      pago: expPago,
     });
   };
 
@@ -124,9 +130,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
           }}>
             <TrendingDown size={14} color="#f87171" />
           </View>
-          <Text style={formTitleStyle}>{editingExpense ? 'Editar Gasto' : 'Novo Gasto'}</Text>
+          <Text style={formTitleStyle as any}>{editingExpense ? 'Editar Gasto' : 'Novo Gasto'}</Text>
         </View>
-        <TouchableOpacity onPress={onCancel} style={closeBtnStyle}>
+        <TouchableOpacity onPress={onCancel} style={closeBtnStyle as any}>
           <X size={15} color={textSecondary} />
         </TouchableOpacity>
       </View>
@@ -134,7 +140,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
       <View style={{ gap: 14 }}>
         {/* Descrição */}
         <View>
-          <Text style={fieldLabelStyle}>Descrição</Text>
+          <Text style={fieldLabelStyle as any}>Descrição</Text>
           <TextInput
             value={expDesc} onChangeText={setExpDesc}
             placeholder="Ex: Conta de Luz, Netflix..." placeholderTextColor={placeholderColor}
@@ -144,9 +150,9 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
 
         {/* Valor */}
         <View>
-          <Text style={fieldLabelStyle}>Valor (R$)</Text>
+          <Text style={fieldLabelStyle as any}>Valor (R$)</Text>
           <TextInput
-            value={expVal} onChangeText={setExpVal}
+            value={expVal} onChangeText={(text) => setExpVal(aplicarMascaraMoeda(text))}
             keyboardType="numeric" placeholder="0,00" placeholderTextColor={placeholderColor}
             style={inputStyle as any}
           />
@@ -154,7 +160,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
 
         {/* Categoria */}
         <View>
-          <Text style={fieldLabelStyle}>Categoria</Text>
+          <Text style={fieldLabelStyle as any}>Categoria</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginHorizontal: -4 }}>
             <View style={{ flexDirection: 'row', gap: 8, paddingHorizontal: 4, paddingVertical: 2 }}>
               {categories.map((c) => {
@@ -179,7 +185,7 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
 
         {/* Dia vencimento */}
         <View>
-          <Text style={fieldLabelStyle}>Dia de Vencimento</Text>
+          <Text style={fieldLabelStyle as any}>Dia de Vencimento</Text>
           <TextInput
             value={expDay} onChangeText={setExpDay}
             keyboardType="numeric" placeholderTextColor={placeholderColor}
@@ -187,9 +193,36 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
           />
         </View>
 
+        {/* Status de Pagamento */}
+        <View>
+          <Text style={fieldLabelStyle as any}>Status do Gasto</Text>
+          <View style={{ flexDirection: 'row', gap: 8 }}>
+            <TouchableOpacity
+              onPress={() => setExpPago(false)}
+              style={{
+                flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+                backgroundColor: !expPago ? 'rgba(244,63,94,0.1)' : inputBg,
+                borderWidth: 1, borderColor: !expPago ? 'rgba(244,63,94,0.3)' : inputBorder,
+              }}
+            >
+              <Text style={{ color: !expPago ? '#f43f5e' : textSecondary, fontSize: 12, fontWeight: '700' }}>Pendente</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => setExpPago(true)}
+              style={{
+                flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: 'center',
+                backgroundColor: expPago ? 'rgba(16,185,129,0.1)' : inputBg,
+                borderWidth: 1, borderColor: expPago ? 'rgba(16,185,129,0.3)' : inputBorder,
+              }}
+            >
+              <Text style={{ color: expPago ? '#10b981' : textSecondary, fontSize: 12, fontWeight: '700' }}>Pago</Text>
+            </TouchableOpacity>
+          </View>
+        </View>
+
         {/* Tipo */}
         <View>
-          <Text style={fieldLabelStyle}>Frequência</Text>
+          <Text style={fieldLabelStyle as any}>Frequência</Text>
           <View style={{ flexDirection: 'row', gap: 8 }}>
             {types.map((t) => {
               const isActive = expTipo === t;
@@ -217,14 +250,14 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
             borderRadius: 14, padding: 14, flexDirection: 'row', gap: 12,
           }}>
             <View style={{ flex: 1 }}>
-              <Text style={fieldLabelStyle}>Total Parcelas</Text>
+              <Text style={fieldLabelStyle as any}>Total Parcelas</Text>
               <TextInput
                 value={expParcelasTotais} onChangeText={setExpParcelasTotais}
                 keyboardType="numeric" style={inputStyle as any}
               />
             </View>
             <View style={{ flex: 1 }}>
-              <Text style={fieldLabelStyle}>Parcela Atual</Text>
+              <Text style={fieldLabelStyle as any}>Parcela Atual</Text>
               <TextInput
                 value={expParcelaAtual} onChangeText={setExpParcelaAtual}
                 keyboardType="numeric" style={inputStyle as any}
@@ -236,10 +269,10 @@ export const ExpenseForm: React.FC<ExpenseFormProps> = ({ editingExpense, onSubm
 
       {/* Footer */}
       <View style={{ flexDirection: 'row', gap: 10, marginTop: 4 }}>
-        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle}>
+        <TouchableOpacity onPress={onCancel} style={btnSecondaryStyle as any}>
           <Text style={{ color: textSecondary, fontWeight: '700', fontSize: 13 }}>Cancelar</Text>
         </TouchableOpacity>
-        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle}>
+        <TouchableOpacity onPress={handleSubmit} style={btnPrimaryStyle as any}>
           <Text style={{ color: 'white', fontWeight: '800', fontSize: 13 }}>
             {editingExpense ? 'Salvar Alterações' : 'Salvar Gasto'}
           </Text>

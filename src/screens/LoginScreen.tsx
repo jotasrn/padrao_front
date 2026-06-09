@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, TouchableOpacity, StatusBar, Animated, Alert } from 'react-native';
+import { View, Text, TouchableOpacity, StatusBar, Animated, Alert, Platform } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import * as LocalAuthentication from 'expo-local-authentication';
 import { Fingerprint, Lock, ShieldCheck } from 'lucide-react-native';
@@ -41,6 +41,10 @@ export default function LoginScreen() {
   };
 
   const handleAuthentication = async () => {
+    if (Platform.OS === 'web') {
+      unlockApp();
+      return;
+    }
     setIsAuthenticating(true);
     try {
       const result = await LocalAuthentication.authenticateAsync({
