@@ -24,7 +24,7 @@ import { GoalForm } from '../components/GoalForm';
 import { GoalCard } from '../components/GoalCard';
 import { ProjectionsSection } from '../components/ProjectionsSection';
 
-type Tab = 'overview' | 'expenses' | 'caixinhas' | 'goals' | 'projections';
+type Tab = 'overview' | 'expenses' | 'caixinhas' | 'goals' | 'projections' | 'history';
 
 const TABS: { key: Tab; label: string; icon: any; color: string }[] = [
   { key: 'overview',     label: 'Geral',     icon: PieChart,      color: '#818cf8' },
@@ -32,14 +32,15 @@ const TABS: { key: Tab; label: string; icon: any; color: string }[] = [
   { key: 'caixinhas',   label: 'Caixinhas', icon: PiggyBank,     color: '#34d399' },
   { key: 'goals',        label: 'Metas',     icon: Target,        color: '#fb923c' },
   { key: 'projections',  label: 'Previsões', icon: CalendarDays,  color: '#38bdf8' },
+  { key: 'history',      label: 'Histórico', icon: RotateCcw,     color: '#a855f7' },
 ];
 
 export default function VestDashboard() {
   const {
-    salary, expenses, caixinhas, goals, aggregates, projections,
+    salary, expenses, caixinhas, goals, history, aggregates, projections,
     goalPredictions, updateSalary, addExpense, updateExpense, deleteExpense,
     toggleExpensePaid, addCaixinha, updateCaixinha, deleteCaixinha,
-    addGoal, updateGoal, deleteGoal, resetToDefault, isLoading,
+    addGoal, updateGoal, deleteGoal, closeMonth, resetToDefault, isLoading,
   } = useVest();
 
   const { privacidadeAtiva, togglePrivacidade } = useAuthStore();
@@ -203,6 +204,19 @@ export default function VestDashboard() {
     );
   };
 
+  const handleCloseMonthConfirm = () => {
+    const dataAtual = new Date();
+    const mesAno = `${String(dataAtual.getMonth() + 1).padStart(2, '0')}/${dataAtual.getFullYear()}`;
+    Alert.alert(
+      'Fechar Mês',
+      `Deseja fechar o mês de ${mesAno}?\n\nIsso salvará os dados atuais no histórico, limpará as despesas únicas já pagas e resetará o status das despesas recorrentes para o próximo mês.`,
+      [
+        { text: 'Cancelar', style: 'cancel' },
+        { text: 'Sim, Fechar Mês', style: 'destructive', onPress: () => closeMonth(mesAno) }
+      ]
+    );
+  };
+
   const fabOpacity = fabGlow.interpolate({ inputRange: [0, 1], outputRange: [0.5, 1] });
 
   if (isLoading) {
@@ -343,6 +357,23 @@ export default function VestDashboard() {
                 </View>
               </View>
             )}
+
+            {/* Fechar Mês Button */}
+            <TouchableOpacity
+              onPress={handleCloseMonthConfirm}
+              style={{
+                backgroundColor: '#a855f7',
+                borderRadius: 16, padding: 16,
+                alignItems: 'center', justifyContent: 'center',
+                flexDirection: 'row', gap: 8,
+                marginTop: 8
+              }}
+            >
+              <RotateCcw size={18} color="white" />
+              <Text style={{ color: 'white', fontWeight: '800', fontSize: 15 }}>
+                Fechar Mês Atual
+              </Text>
+            </TouchableOpacity>
           </View>
         )}
 
@@ -451,6 +482,63 @@ export default function VestDashboard() {
             projectionMonths={projectionMonths} setProjectionMonths={setProjectionMonths}
             formatBRL={formatBRL} onNavigateToCaixinhas={() => setActiveTab('caixinhas')}
           />
+        )}
+
+        {/* TAB: HISTORY */}
+        {activeTab === 'history' && (
+          <View style={{ gap: 16 }}>
+            <TabHeader title="Histórico" subtitle="Desempenho de meses anteriores." />
+            {(!history || history.length === 0) ? (
+              <EmptyState icon={RotateCcw} message="Nenhum mês fechado ainda!" color="#a855f7" />
+            ) : (
+              history.map((hist) => (
+                <View key={hist.id} style={{
+                  backgroundColor: cardBg,
+                  borderRadius: 20, padding: 18,
+                  borderWidth: 1, borderColor: cardBorder,
+                  marginBottom: 12
+                }}>
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <View style={{ width: 36, height: 36, borderRadius: 12, backgroundColor: 'rgba(168,85,247,0.1)', alignItems: 'center', justifyContent: 'center' }}>
+                        <CalendarDays size={18} color="#a855f7" />
+                      </View>
+                      <Text style={{ color: textPrimary, fontSize: 16, fontWeight: '800' }}>
+                        Mês {hist.mesAno}
+                      </Text>
+                    </View>
+                    <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12, backgroundColor: hist.sobra >= 0 ? 'rgba(16,185,129,0.15)' : 'rgba(239,68,68,0.15)' }}>
+                      <Text style={{ color: hist.sobra >= 0 ? '#10b981' : '#ef4444', fontWeight: '800', fontSize: 12 }}>
+                        {hist.sobra >= 0 ? 'Positivo' : 'Negativo'}
+                      </Text>
+                    </View>
+                  </View>
+
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginBottom: 12 }}>
+                    <View>
+                      <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Receitas</Text>
+                      <Text style={{ color: textPrimary, fontSize: 14, fontWeight: '700', marginTop: 2 }}>{formatBRL(hist.receitas)}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Despesas Pagas</Text>
+                      <Text style={{ color: '#f87171', fontSize: 14, fontWeight: '700', marginTop: 2 }}>{formatBRL(hist.despesasPagas)}</Text>
+                    </View>
+                  </View>
+                  
+                  <View style={{ flexDirection: 'row', justifyContent: 'space-between', paddingTop: 12, borderTopWidth: 1, borderTopColor: cardBorder }}>
+                    <View>
+                      <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Investido</Text>
+                      <Text style={{ color: '#34d399', fontSize: 14, fontWeight: '700', marginTop: 2 }}>{formatBRL(hist.investido)}</Text>
+                    </View>
+                    <View style={{ alignItems: 'flex-end' }}>
+                      <Text style={{ color: textSecondary, fontSize: 11, fontWeight: '700', textTransform: 'uppercase' }}>Sobra Final</Text>
+                      <Text style={{ color: hist.sobra >= 0 ? '#818cf8' : '#f87171', fontSize: 15, fontWeight: '900', marginTop: 2 }}>{formatBRL(hist.sobra)}</Text>
+                    </View>
+                  </View>
+                </View>
+              ))
+            )}
+          </View>
         )}
       </ScrollView>
 

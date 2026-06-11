@@ -10,7 +10,8 @@ const DEFAULT_DATA: VestData = {
   },
   expenses: [],
   caixinhas: [],
-  goals: []
+  goals: [],
+  history: []
 };
 
 export class VestService {
@@ -44,6 +45,12 @@ export class VestService {
           }
           return cx;
         });
+      }
+
+      // Migração para adicionar o histórico
+      if (!parsed.history) {
+        parsed.history = [];
+        needsSave = true;
       }
 
       if (needsSave) {

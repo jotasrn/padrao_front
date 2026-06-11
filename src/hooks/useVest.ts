@@ -143,6 +143,58 @@ export const useVest = () => {
     setData(freshData);
   };
 
+  // --- Ações de Histórico ---
+  const closeMonth = (mesAno: string) => {
+    setData((prev) => {
+      // 1. Snapshot do mês atual
+      const receitas = prev.salary.salario;
+      const despesasTotais = prev.expenses.reduce((sum, e) => sum + e.valor, 0);
+      const despesasPagas = prev.expenses.filter(e => e.pago).reduce((sum, e) => sum + e.valor, 0);
+      const investido = prev.caixinhas.reduce((sum, cx) => sum + cx.aporteMensal, 0);
+      const sobra = receitas - despesasPagas - investido;
+      
+      const despesasDetalhadas = prev.expenses.filter(e => e.pago).map(e => ({ ...e }));
+
+      const newHistoryRecord = {
+        id: typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : Math.random().toString(36).substring(2, 9),
+        mesAno,
+        receitas,
+        despesasTotais,
+        despesasPagas,
+        investido,
+        rendimentoCaixinhas: 0,
+        sobra,
+        despesasDetalhadas,
+      };
+
+      // 2. Reset para próximo mês
+      const newExpenses: Expense[] = [];
+      prev.expenses.forEach(e => {
+        if (e.tipo === 'Única') {
+          if (!e.pago) newExpenses.push(e); // mantém se não pagou
+        } else if (e.tipo === 'Recorrente') {
+          newExpenses.push({ ...e, pago: false });
+        } else if (e.tipo === 'Parcelada') {
+          if (e.pago) {
+            const atual = e.parcelaAtual || 1;
+            const total = e.parcelasTotais || 1;
+            if (atual < total) {
+              newExpenses.push({ ...e, pago: false, parcelaAtual: atual + 1 });
+            }
+          } else {
+             newExpenses.push(e); // não pagou, mantém
+          }
+        }
+      });
+
+      return {
+        ...prev,
+        history: [...(prev.history || []), newHistoryRecord],
+        expenses: newExpenses,
+      };
+    });
+  };
+
   // --- Cálculos de Resumo (Dashboard Aggregates) ---
   const aggregates = useMemo(() => {
     const salario = data.salary.salario;
@@ -377,6 +429,7 @@ export const useVest = () => {
     expenses: data.expenses,
     caixinhas: data.caixinhas,
     goals: data.goals,
+    history: data.history || [],
     aggregates,
     projections,
     goalPredictions,
@@ -391,6 +444,7 @@ export const useVest = () => {
     addGoal,
     updateGoal,
     deleteGoal,
+    closeMonth,
     resetToDefault,
     isLoading,
   };

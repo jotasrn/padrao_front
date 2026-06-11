@@ -51,6 +51,19 @@ export interface VestData {
   expenses: Expense[];
   caixinhas: Caixinha[];
   goals: Goal[];
+  history?: MonthHistory[];
+}
+
+export interface MonthHistory {
+  id: string;
+  mesAno: string;
+  receitas: number;
+  despesasTotais: number;
+  despesasPagas: number;
+  investido: number;
+  rendimentoCaixinhas: number;
+  sobra: number;
+  despesasDetalhadas: Expense[];
 }
 
 export interface MonthlyProjection {
