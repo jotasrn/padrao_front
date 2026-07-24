@@ -6,9 +6,10 @@ import { useSemAcesso } from './hooks/useSemAcesso';
 import { Sidebar } from './components/Sidebar';
 import { Headerbar } from './components/Headerbar';
 import { Button } from './components/Button';
-import { ShieldAlert, KeyRound, User, Lock, ArrowRight } from 'lucide-react';
-
-const LoadingSpinner: React.FC = () => (
+import { ShieldAlert, KeyRound, User, Lock, ArrowRight, AlertTriangle } from 'lucide-react';
+import { useIncognitoBlocker } from './hooks/useIncognitoBlocker';
+import { useSecurity } from './hooks/useSecurity';
+const LoadingSpinner = () => (
   <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', height: '100%', gap: '1rem', minHeight: '300px' }}>
     <div style={{ width: '40px', height: '40px', border: '3px solid rgba(59, 130, 246, 0.1)', borderTopColor: '#3b82f6', borderRadius: '50%', animation: 'spin 1s linear infinite' }} />
     <span style={{ fontSize: '0.85rem', color: '#94a3b8', fontWeight: 500 }}>Carregando módulo...</span>
@@ -39,6 +40,82 @@ const LockScreen: React.FC = () => {
     </div>
   );
 };
+
+const SemAcessoGuard = () => {
+  const [apiPermissionError, setApiPermissionError] = useState<string | null>(null);
+
+  React.useEffect(() => {
+    const handler = (e: any) => {
+      setApiPermissionError(e.detail?.mensagem || 'Acesso Restrito');
+    };
+    window.addEventListener('cdp:sem-acesso', handler);
+    return () => window.removeEventListener('cdp:sem-acesso', handler);
+  }, []);
+
+  if (apiPermissionError) {
+    return (
+      <div
+        className="fixed inset-0 z-[9999] flex items-center justify-center bg-slate-950/90 backdrop-blur-md"
+        style={{ pointerEvents: 'all' }}
+      >
+        <div className="bg-white rounded-[2.5rem] shadow-2xl max-w-md w-full mx-6 overflow-hidden animate-in fade-in zoom-in-95 duration-300">
+          <div className="bg-gradient-to-br from-red-600 to-red-700 p-8 text-center">
+             <AlertTriangle className="w-12 h-12 text-white mx-auto mb-2" />
+             <h2 className="text-white text-xl font-black uppercase tracking-widest">Acesso Negado</h2>
+          </div>
+          <div className="p-8 text-center space-y-6">
+            <p className="text-slate-700 font-medium">{apiPermissionError}</p>
+            <button
+              onClick={() => setApiPermissionError(null)}
+              className="w-full bg-slate-800 hover:bg-slate-700 text-white py-4 rounded-2xl font-black text-xs uppercase tracking-[0.2em] transition-all"
+            >
+              Entendi
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // The SemAcessoModal is shown if blocked and there's no API error. 
+  // Wait, padrao_front uses LockScreen for blocked users.
+  // I will just use LockScreen logic instead of SemAcessoModal if bloqueado is true.
+  return null;
+};
+
+const IncognitoBlockScreen = () => (
+  <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-900 text-white p-4">
+    <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-md text-center border border-red-500/30">
+      <div className="w-20 h-20 bg-red-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+        <AlertTriangle className="w-10 h-10 text-red-500" />
+      </div>
+      <h2 className="text-2xl font-bold mb-4 text-white">Acesso Bloqueado</h2>
+      <p className="text-slate-300 mb-6 leading-relaxed">
+        O acesso ao sistema não é permitido através de Guias Anônimas (Incognito Mode) por motivos de segurança e rastreabilidade.
+      </p>
+      <p className="text-sm text-slate-400 bg-slate-900/50 p-4 rounded-lg">
+        Por favor, feche esta aba e acesse o sistema utilizando uma guia normal do seu navegador.
+      </p>
+    </div>
+  </div>
+);
+
+const GeoBlockScreen = () => (
+  <div className="min-h-screen w-full flex flex-col items-center justify-center bg-slate-900 text-white p-4">
+    <div className="bg-slate-800 p-8 rounded-2xl shadow-2xl max-w-md text-center border border-amber-500/30">
+      <div className="w-20 h-20 bg-amber-500/10 rounded-full flex items-center justify-center mx-auto mb-6">
+        <AlertTriangle className="w-10 h-10 text-amber-500" />
+      </div>
+      <h2 className="text-2xl font-bold mb-4 text-white">Geolocalização Necessária</h2>
+      <p className="text-slate-300 mb-6 leading-relaxed">
+        Para acessar o sistema via celular, a geolocalização precisa estar ativada e com permissão concedida.
+      </p>
+      <p className="text-sm text-slate-400 bg-slate-900/50 p-4 rounded-lg">
+        Por favor, ative o GPS do seu celular e autorize o navegador a acessar sua localização nas configurações para liberar o acesso.
+      </p>
+    </div>
+  </div>
+);
 
 // Login View
 const LoginScreen: React.FC = () => {
@@ -162,6 +239,9 @@ const MainLayoutShell: React.FC = () => {
       {/* Sidebar */}
       <Sidebar />
 
+      {/* SemAcessoGuard Listener */}
+      <SemAcessoGuard />
+
       {/* Right Column content container */}
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100vh', overflow: 'hidden' }}>
         
@@ -202,8 +282,26 @@ const MainLayoutShell: React.FC = () => {
 
 // Application Main Selector
 const AppContent: React.FC = () => {
+  const { isIncognito } = useIncognitoBlocker();
+  const { geoBlocked, geoLoading } = useSecurity();
   const { estaAutenticado } = useAuth();
   const { bloqueado } = useSemAcesso();
+
+  if (isIncognito === null || geoLoading) {
+    return (
+      <div className="flex h-screen w-screen items-center justify-center bg-slate-900">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+      </div>
+    );
+  }
+
+  if (isIncognito === true) {
+    return <IncognitoBlockScreen />;
+  }
+
+  if (geoBlocked) {
+    return <GeoBlockScreen />;
+  }
 
   if (!estaAutenticado) {
     return <LoginScreen />;

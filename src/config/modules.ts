@@ -4,7 +4,9 @@ import { withProps } from '../screens/PlaceholderView';
 
 // Lazy load modules/screens to support code splitting
 const DashboardDocs = lazy(() => import('../screens/DashboardDocs'));
+const ApiLoginDocs = lazy(() => import('../screens/ApiLoginDocs'));
 const OperadoraList = lazy(() => import('../screens/OperadoraList'));
+const VolIndex = lazy(() => import('../app/SCL/Vol/Index'));
 
 const raw_modulos_sistema: ModuloConfig[] = [
   {
@@ -16,7 +18,11 @@ const raw_modulos_sistema: ModuloConfig[] = [
     cor: '#1e293b',
     rota: 'dashboard',
     componente: DashboardDocs,
-    ativo: true
+    ativo: true,
+    subMenus: [
+      { id: 'dash-main', titulo: 'Guia Inicial', icone: 'FileText', rota: 'dash-main', componente: DashboardDocs },
+      { id: 'dash-api', titulo: 'Documentação API', icone: 'Code', rota: 'dash-api', componente: ApiLoginDocs }
+    ]
   },
   {
     id: 'suop',
@@ -63,6 +69,20 @@ const raw_modulos_sistema: ModuloConfig[] = [
       { id: 'cdp-sistemas', titulo: 'Sistemas', icone: 'Server', rota: 'cdp-sistemas', componente: withProps('CDP - Sistemas', 'Cadastro de novos sistemas do ecossistema SEMOB.') },
       { id: 'cdp-usuarios', titulo: 'Usuários', icone: 'Users', rota: 'cdp-usuarios', componente: withProps('CDP - Usuários', 'Associação de usuários com perfis e prepostos.') },
       { id: 'cdp-grupos', titulo: 'Perfis e Regras', icone: 'Key', rota: 'cdp-grupos', componente: withProps('CDP - Perfis', 'Cadastro de perfis de permissão do sistema.') }
+    ]
+  },
+  {
+    id: 'scl',
+    sigla: 'SCL',
+    nome: 'Operacional',
+    descricao: 'Sistema de Controle Operacional',
+    icone: 'Bus',
+    cor: '#0284c7',
+    rota: 'scl',
+    componente: withProps('SCL - Operacional', 'Gestão Operacional da Frota'),
+    ativo: true,
+    subMenus: [
+      { id: 'scl-vol', titulo: 'VOL', icone: 'Map', rota: 'scl-vol', componente: VolIndex }
     ]
   }
 ];
